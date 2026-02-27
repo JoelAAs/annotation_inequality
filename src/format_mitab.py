@@ -40,7 +40,7 @@ def filter_mitab(filename):
     mitab_df["detection_method"] = mitab_df["Interaction detection method(s)"].apply(
         _find_pattern, args=(r"psi-mi:\"(MI:\d+)\"",))
     mitab_df["year_created"] = mitab_df["Creation date"].apply(
-        _find_pattern, args=(r"(\d+)/(d+)/(d+)",))
+        _find_pattern, args=(r"(\d+)/\d+/\d+",))
     return mitab_df
 
 
@@ -55,7 +55,9 @@ def reform_to_bait_prey(mitab_df):
         detection_method
     """
     mitab_df = mitab_df[["IDA", "IDB", "RoleA", "RoleB", "detection_method", "pubmed_id", "year_created"]].drop_duplicates(keep="first")
+    n_ppis = mitab_df.shape[0]
     mitab_df = mitab_df.dropna()
+    print(f"dropped {n_ppis - mitab_df.shape[0]} out of {n_ppis} due to missing values")
     mitab_df = mitab_df[mitab_df["RoleA"] ^ mitab_df["RoleB"]]
     reform_list = []
     for _, row in mitab_df.iterrows():

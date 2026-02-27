@@ -1,4 +1,4 @@
-api_key <- readLines("~/temp")[0]
+api_key <- readLines("~/temp")[1]
 Sys.setenv(DISGENET_API_KEY = api_key)
 
 library(disgenet2r) # for disgenet

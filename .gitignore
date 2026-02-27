@@ -205,3 +205,9 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+work_folder/
+__pycache__/
+*.py[cod]
+.idea/
+.snakemake/
+
