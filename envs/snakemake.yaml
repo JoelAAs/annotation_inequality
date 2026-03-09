@@ -1,0 +1,11 @@
+name: snakemake
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - snakemake
+  - networkx
+  - pyarrow
+  - r-disgenet2r
+  - r-arrow
+  - r-tidyverse
