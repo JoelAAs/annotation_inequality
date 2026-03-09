@@ -14,9 +14,13 @@ rule join_dfs:
         # First filtering for baits
         bpi_df_baits = bpi_df[bpi_df['type'] == 'bait']
         joined_baits = bpi_df_baits.merge(ac_df, left_on = 'uniprot_id', right_on = 'uniprotid', how = 'outer')
+        # Keeping just one column for the id
+        joined_baits.drop('uniprotid', axis = 1)
         joined_baits.to_parquet(output.joined_baits)
 
         # Now filtering for preys
         bpi_df_preys = bpi_df[bpi_df['type'] == 'prey']
         joined_preys = bpi_df_preys.merge(ac_df, left_on = 'uniprot_id', right_on = 'uniprotid', how = 'outer')
+        # Also here keeping just one of the two columns
+        joined_preys.drop('uniprotid', axis = 1)
         joined_preys.to_parquet(output.joined_preys)
