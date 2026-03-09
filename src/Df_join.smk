@@ -2,10 +2,10 @@ import pandas as pd
 
 rule join_dfs:
     input:
-        annotation_counts = "work_folder/data/disgenet/anotation_per_uniprot.csv"
+        annotation_counts = "work_folder/data/disgenet/anotation_per_uniprot.csv",
         bait_prey_interactions = "work_folder/data/intact/bait_prey_publications.pq"
     output:
-        joined_baits = "work_folder/data/joined/interactions_annotations_baits.pq"
+        joined_baits = "work_folder/data/joined/interactions_annotations_baits.pq",
         joined_preys = "work_folder/data/joined/interactions_annotations_preys.pq"
     run:
         ac_df = pd.read_parquet(input.annotation_counts)
