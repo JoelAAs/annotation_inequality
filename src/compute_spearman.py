@@ -7,6 +7,7 @@ def get_spearman_correlation(df):
     y = df['annotation_count']
 
     rho, pval = spearmanr(x, y)
+    print(f'rho = {rho}\tp-value = {pval}')
 
     return rho, pval
 
@@ -16,6 +17,8 @@ def make_scatterplot():
 
     for inputfile, outputfile in zip(inputs, outputs):
         df = pd.read_parquet(inputfile)
+        print(f'Opening file {inputfile}')
+        print(f'Svaing image on {outputfile}')
 
         rho, pval = get_spearman_correlation(df)
 
