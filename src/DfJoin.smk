@@ -1,5 +1,3 @@
-import pandas as pd
-
 rule join_dfs:
     input:
         annotation_counts = "work_folder/data/disgenet/anotation_per_uniprot.csv",
@@ -8,8 +6,12 @@ rule join_dfs:
         joined_baits = "work_folder/data/joined/interactions_annotations_baits.pq",
         joined_preys = "work_folder/data/joined/interactions_annotations_preys.pq"
     run:
+        import pandas as pd
+
         ac_df = pd.read_csv(input.annotation_counts)
         bpi_df = pd.read_parquet(input.bait_prey_interactions)
+        print("Left DF columns:", df1.columns.tolist())
+        print("Right DF columns:", df2.columns.tolist())
 
         # First filtering for baits
         bpi_df_baits = bpi_df[bpi_df['type'] == 'bait']
