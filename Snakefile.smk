@@ -1,6 +1,6 @@
 include: "src/BaitUsage.smk"
 include: "src/GetAnnotationData.smk"
-include: "src/Df_join.smk"
+include: "src/DfJoin.smk"
 
 rule all:
     input:
