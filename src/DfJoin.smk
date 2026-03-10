@@ -8,7 +8,7 @@ rule join_dfs:
         joined_baits = "work_folder/data/joined/interactions_annotations_baits.pq",
         joined_preys = "work_folder/data/joined/interactions_annotations_preys.pq"
     run:
-        ac_df = pd.read_parquet(input.annotation_counts)
+        ac_df = pd.read_csv(input.annotation_counts)
         bpi_df = pd.read_parquet(input.bait_prey_publications)
 
         # First filtering for baits
