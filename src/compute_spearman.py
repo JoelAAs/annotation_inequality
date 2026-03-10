@@ -36,7 +36,7 @@ def get_spearman_correlation(df):
 
     x = df_clean['annotation_count']
     y = df_clean['count']
-
+    
     rho, pval = spearmanr(x, y)
     print(f'rho = {rho}\tp-value = {pval}')
 
