@@ -8,7 +8,7 @@ rule join_dfs:
     run:
         import pandas as pd
 
-        ac_df = pd.read_csv(input.annotation_counts)
+        ac_df = pd.read_csv(input.annotation_counts, sep="\t")
         bpi_df = pd.read_parquet(input.bait_prey_interactions)
         print("Left DF columns:", ac_df.columns.tolist())
         print("Right DF columns:", bpi_df.columns.tolist())
