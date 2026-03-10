@@ -3,7 +3,7 @@ import pandas as pd
 rule join_dfs:
     input:
         annotation_counts = "work_folder/data/disgenet/anotation_per_uniprot.csv",
-        bait_prey_interactions = "work_folder/data/intact/bait_prey_publications.pq"
+        bait_prey_interactions = "work_folder/data/intact/bait_prey_frequecies.pq"
     output:
         joined_baits = "work_folder/data/joined/interactions_annotations_baits.pq",
         joined_preys = "work_folder/data/joined/interactions_annotations_preys.pq"
