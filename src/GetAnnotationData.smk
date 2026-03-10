@@ -22,7 +22,7 @@ rule get_annotations_per_id:
                 for line in f:
                     values = line.strip().split("\t")
 
-                    if current_id != values[1]:
+                    if current_id != [values1]:
                         if not header:
                             w.write(f"{current_id}\t{len(set(current_annotations))}\n")
                         else:
@@ -31,7 +31,7 @@ rule get_annotations_per_id:
                         current_id = values[1]
                         current_annotations = [values[3],]
                     else:
-                        current_annotations.append(values[3])
+                        current_annotations.append(values[3]) # TODO last protein is not written
 
 
 rule get_HDO:
