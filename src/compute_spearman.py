@@ -4,6 +4,13 @@ from scipy.stats import spearmanr
 from pathlib import Path
 
 def get_spearman_correlation(df):
+    '''
+    col_1 = df['annotation_count']
+    col_2 = df['count']
+    rho_test = col_1.corr(col_2, method = 'spearman')
+    print(f'Spearman correlation with pandas: {rho_test}')
+    '''
+
     df_clean = df.dropna(subset = ['count', 'annotation_count'])
 
     x = df_clean['annotation_count']
@@ -34,8 +41,10 @@ def make_scatterplot():
         plt.text(0.05, 0.95, f'Spearman ρ = {rho:.5f}\np-value = {pval:.3e}',
                  transform = plt.gca().transAxes, fontsize = 12,
                  bbox = dict(boxstyle = "round,pad=0.3", facecolor = "white"))
-        plt.xlabel('Annotations_count')
-        plt.ylabel('Interactions_count')
+        plt.xscale('log')
+        plt.yscale('log')
+        plt.xlabel('Annotations Count (log scale)')
+        plt.ylabel('Interactions Count (log scale)')
         plt.grid(True, alpha = 0.3)
         plt.title(f'Spearman Correlation Annotations vs Interactions counts ({bait_or_prey})\nρ = {rho:.3f}')
 
