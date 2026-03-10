@@ -11,8 +11,8 @@ def get_spearman_correlation(df):
     return rho, pval
 
 def make_scatterplot():
-    inputs = list(snakemake.input.values())
-    outputs = list(snakemake.output.values())
+    inputs = snakemake.input
+    outputs = snakemake.output
 
     for inputfile, outputfile in zip(inputs, outputs):
         df = pd.read_parquet(inputfile)
