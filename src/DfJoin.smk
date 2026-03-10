@@ -9,7 +9,7 @@ rule join_dfs:
         joined_preys = "work_folder/data/joined/interactions_annotations_preys.pq"
     run:
         ac_df = pd.read_csv(input.annotation_counts)
-        bpi_df = pd.read_parquet(input.bait_prey_publications)
+        bpi_df = pd.read_parquet(input.bait_prey_interactions)
 
         # First filtering for baits
         bpi_df_baits = bpi_df[bpi_df['type'] == 'bait']
