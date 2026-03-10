@@ -31,7 +31,7 @@ def make_scatterplot():
 
         plt.figure(figsize = (10, 8))
         plt.scatter(df['annotation_count'], df['count'], alpha = 0.6, s = 50)
-        plt.text(0.05, 0.95, f'Spearman ρ = {rho:.3f}\np-value = {pval:.3f}',
+        plt.text(0.05, 0.95, f'Spearman ρ = {rho:.5f}\np-value = {pval:.3e}',
                  transform = plt.gca().transAxes, fontsize = 12,
                  bbox = dict(boxstyle = "round,pad=0.3", facecolor = "white"))
         plt.xlabel('Annotations_count')
