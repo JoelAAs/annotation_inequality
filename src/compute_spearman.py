@@ -6,6 +6,9 @@ def get_spearman_correlation(df):
     x = df['count']
     y = df['annotation_count']
 
+    print(f"x length: {len(x)}, non-NaN: {x.notna().sum()}")
+    print(f"y length: {len(y)}, non-NaN: {y.notna().sum()}")
+
     rho, pval = spearmanr(x, y)
     print(f'rho = {rho}\tp-value = {pval}')
 
