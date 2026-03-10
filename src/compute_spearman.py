@@ -3,8 +3,10 @@ import matplotlib.pyplot as plt
 from scipy.stats import spearmanr
 
 def get_spearman_correlation(df):
-    x = df['count']
-    y = df['annotation_count']
+    df_clean = df.dropna(subset = ['count', 'annotation_count'])
+
+    x = df_clean['count']
+    y = df_clean['annotation_count']
 
     print(f"x length: {len(x)}, non-NaN: {x.notna().sum()}")
     print(f"y length: {len(y)}, non-NaN: {y.notna().sum()}")
