@@ -3,6 +3,27 @@ import matplotlib.pyplot as plt
 from scipy.stats import spearmanr
 from pathlib import Path
 
+def plot_distributions(df, name):
+    counts = df['count'].dropna()
+    annotations = df['annotation_count'].dropna()
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize = (12, 5))
+
+    ax1.hist(counts[counts > 0], bins = 50, alpha = 0.7, color = 'skyblue', edgecolor = 'navy')
+    ax1.set_xlabel('Interactions count')
+    ax1.set_ylabel('Frequency')
+    ax1.set_title(f'Interactions count distribution ({name})')
+    ax1.set_yscale('log')
+
+    ax2.hist(annotations[annotations > 0], bins = 50, alpha = 0.7, color = 'skyblue', edgecolor = 'navy')
+    ax2.set_xlabel('Annotations count')
+    ax2.set_ylabel('Frequency')
+    ax2.set_title(f'Annotations count distribution ({name}()')
+    ax2.set_yscale('log')
+
+    plt.tight_layout()
+    plt.savefig(f"work_folder/data/plots/{name}distributions.png")
+
 def get_spearman_correlation(df):
     '''
     col_1 = df['annotation_count']
@@ -35,6 +56,7 @@ def make_scatterplot():
 
         rho, pval = get_spearman_correlation(df)
         bait_or_prey = get_name(inputfile)
+        plot_distributions(df, bait_or_prey)
 
         plt.figure(figsize = (10, 8))
         plt.scatter(df['annotation_count'], df['count'], alpha = 0.6, s = 50)
