@@ -55,3 +55,19 @@ rule get_bait_prey_usage:
         bp_frequencies.to_parquet(
             output.bp_frequencies
         )
+
+rule get_bait_count_per_study:
+    input:
+        bp_df = "work_folder/data/intact/bait_prey_publications.pq"
+    output:
+        b_frequencies = "work_folder/data/intact/bait_count.csv"
+    run:
+        bp_df = pd.read_parquet(input.bp_df)
+        bp_df["uniprot_id_bait"] = bp_df["uniprot_id_bait"].apply(detect_and_join_isoform)
+        bp_df["uniprot_id_prey"] = bp_df["uniprot_id_prey"].apply(detect_and_join_isoform)
+        
+        b_count_per_study = bp_df.groupby(["uniprot_id_bait", "pubmed_id", "detection_method"], as_index=False).size()
+        number_of_studies_per_bait_prey = b_count_per_study.groupby(["uniprot_id_bait"], as_index=False).size()
+        number_of_studies_per_bait_prey.columns = ["uniprot_id_bait", "count"]
+
+        number_of_studies_per_bait_prey.to_csv(output.b_frequencies, sep="\t", index=False)
