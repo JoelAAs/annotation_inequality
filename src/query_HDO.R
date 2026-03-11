@@ -13,39 +13,21 @@ pod_df <- read_parquet(
     input_pod
 )
 
-### Processing
-all_gene <- unique(pod_df$uniprot_id)
-entrez_id <- mapIds(
-    org.Hs.eg.db,
-    keys = all_gene,
-    column = "ENTREZID", keytype = "UNIPROT", multiVals = "first"
-)
-
-gene_df <- data.frame(
-    uniprot_id = names(entrez_id),
-    entrez_id = unlist(entrez_id)
-)
 
 doids <- select(
     x = HDO.db,
-    keys = gene_df$entrez_id, keytype = "gene",
+    keys = pod_df$entrez_id, keytype = "gene",
     columns = c("doid")
 )
 
 colnames(doids) <- c("doid", "entrez_id")
 
-full <- merge(doids, gene_df, by = "entrez_id", all = TRUE)
-full <- full[complete.cases(full), ]
-
+full <- merge(doids, pod_df, by = "entrez_id", all = TRUE)
 full %>%
-    group_by(uniprot_id) %>%
+    # Counting the number of different DO annotations for each entrez_id
+    group_by(entrez_id) %>%
     summarise(count = n_distinct(doid)) %>%
     arrange(desc(count)) -> doid_counts
-
+    # TODO remove na only in column entrez_id and replace with 0 na in annotations
+ 
 write.table(doid_counts, output_pod, sep = "\t", row.names = FALSE)
-
-df <- read.table("work_folder/data/HDO/anotation_per_uniprot.csv", sep="\t", header = TRUE)
-
-ggplot(df, aes(x = count_degree, count_annot)) +
-    geom_point() +
-    theme_bw()
