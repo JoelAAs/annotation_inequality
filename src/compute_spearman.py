@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 from scipy.stats import spearmanr
 from pathlib import Path
 
+def get_name(input_path):
+    return Path(input_path).stem.split('_')[-1]
+
 def plot_distributions(df, name):
     counts = df['count'].dropna()
     annotations = df['annotation_count'].dropna()
@@ -41,9 +44,6 @@ def get_spearman_correlation(df):
     print(f'rho = {rho}\tp-value = {pval}')
 
     return rho, pval
-
-def get_name(input_path):
-    return Path(input_path).stem.split('_')[-1]
 
 def make_scatterplot():
     inputs = snakemake.input
