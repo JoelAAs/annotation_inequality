@@ -69,3 +69,11 @@ rule get_HDO_per_entrez_preys:
         df = pd.merge(df_studies, df_annot, left_on="entrez_id_prey", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
         df.fillna(0, inplace=True)
         df.to_csv(output.annotations_per_id, sep="\t", index=False) 
+
+rule get_GO:
+    input:
+        bp_frequencies = "work_folder/data/intact/bait_prey_frequencies.pq"
+    output:
+        annotation_df_BP = "work_folder/data/GO/entrez_to_GO_BP.csv"
+    run: 
+        "query_GO.py"
