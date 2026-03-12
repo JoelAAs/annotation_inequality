@@ -2,6 +2,7 @@ library(HDO.db)
 library(tidyverse)
 library(org.Hs.eg.db)
 library(arrow)
+library(dplyr)
 
 ### args
 
@@ -28,6 +29,9 @@ full %>%
     group_by(entrez_id) %>%
     summarise(count = n_distinct(doid)) %>%
     arrange(desc(count)) -> doid_counts
-    # TODO remove na only in column entrez_id and replace with 0 na in annotations
+
+doid_counts <- doid_counts %>%
+    filter(!is.na(entrez_id)) %>%
+    mutate(count = replace_na(count, 0))
  
 write.table(doid_counts, output_pod, sep = "\t", row.names = FALSE)

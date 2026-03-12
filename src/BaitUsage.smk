@@ -81,3 +81,19 @@ rule get_bait_count_per_study:
         number_of_studies_per_bait_prey.columns = ["entrez_id_bait", "count"]
 
         number_of_studies_per_bait_prey.to_csv(output.b_frequencies, sep="\t", index=False)
+
+rule get_prey_count_per_study:
+    input:
+        bp_df = "work_folder/data/intact/bait_prey_publications.pq"
+    output:
+        p_frequencies = "work_folder/data/intact/prey_count.csv"
+    run:
+        bp_df = pd.read_parquet(input.bp_df)
+        bp_df["entrez_id_bait"] = bp_df["entrez_id_bait"].apply(detect_and_join_isoform)
+        bp_df["entrez_id_prey"] = bp_df["entrez_id_prey"].apply(detect_and_join_isoform)
+        
+        p_count_per_study = bp_df.groupby(["entrez_id_prey", "pubmed_id", "detection_method"], as_index=False).size()
+        number_of_studies_per_bait_prey = p_count_per_study.groupby(["entrez_id_prey"], as_index=False).size()
+        number_of_studies_per_bait_prey.columns = ["entrez_id_prey", "count"]
+
+        number_of_studies_per_bait_prey.to_csv(output.p_frequencies, sep="\t", index=False)

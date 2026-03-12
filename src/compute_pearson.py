@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import spearmanr
+from scipy.stats import pearsonr
 from pathlib import Path
 
 def get_bait_or_prey(input_path):
@@ -36,15 +36,15 @@ def plot_distributions(df, name, database):
     plt.tight_layout()
     plt.savefig(f"work_folder/data/plots/{database}_plots/{name}distributions.png")
 
-def get_spearman_correlation(df):
+def get_pearson_correlation(df):
     x = df['count_annot']
     y = df['count_studies']
     
-    rho, pval = spearmanr(x, y)
+    r, pval = pearsonr(x, y)
     pval = pval if float(pval) > 1e-300 else 1e-300
-    print(f'rho = {rho}\tp-value = {pval}')
+    print(f'r = {r}\tp-value = {pval}')
 
-    return rho, pval
+    return r, pval
 
 def make_scatterplot():
     inputs = snakemake.input
@@ -55,15 +55,15 @@ def make_scatterplot():
         print(f'Opening file {inputfile}')
         print(f'Saving image on {outputfile}')
 
-        rho, pval = get_spearman_correlation(df)
+        r, pval = get_pearson_correlation(df)
         bait_or_prey = get_bait_or_prey(inputfile)
         database = get_database(inputfile)
         plot_distributions(df, bait_or_prey, database)
 
-        # Plot with linear counts
+        # Plot with log counts
         plt.figure(figsize = (10, 8))
         plt.scatter(df['count_annot'], df['count_studies'], alpha = 0.6, s = 50)
-        plt.text(0.05, 0.95, f'Spearman ρ = {rho:.5f}\np-value = {pval:.2e}',
+        plt.text(0.05, 0.95, f'Pearson r = {r:.5f}\np-value = {pval:.2e}',
                  transform = plt.gca().transAxes, fontsize = 12,
                  bbox = dict(boxstyle = "round,pad=0.3", facecolor = "white"))
         plt.xscale('log')
@@ -71,7 +71,7 @@ def make_scatterplot():
         plt.xlabel('Annotation Counts (log scale)')
         plt.ylabel('Study Counts (log scale)')
         plt.grid(True, alpha = 0.3)
-        plt.title(f'Spearman Correlation Annotation vs Study counts ({bait_or_prey})\nρ = {rho:.3f}')
+        plt.title(f'Pearson Correlation Annotation vs Study counts ({bait_or_prey})\nr = {r:.3f}')
 
         plt.savefig(outputfile, dpi = 300, bbox_inches = 'tight')
         plt.close()
@@ -79,14 +79,14 @@ def make_scatterplot():
         # Plot with linear counts
         plt.figure(figsize = (10, 8))
         plt.scatter(df['count_annot'], df['count_studies'], alpha = 0.6, s = 50)
-        plt.text(0.05, 0.95, f'Pearson ρ = {rho:.5f}\np-value = {pval:.2e}',
+        plt.text(0.05, 0.95, f'Pearson r = {r:.5f}\np-value = {pval:.2e}',
                  transform = plt.gca().transAxes, fontsize = 12,
                  bbox = dict(boxstyle = "round,pad=0.3", facecolor = "white"))
         plt.xlabel('Annotation Counts')
         plt.ylabel('Study Counts')
         plt.grid(True, alpha = 0.3)
-        plt.title(f'Spearman Correlation Annotation vs Study counts ({bait_or_prey})\nr = {rho:.3f}')
-        plt.savefig(f"work_folder/data/plots/{database}_plots/spearman_linear_counts_{bait_or_prey}.png", dpi = 300, bbox_inches = 'tight')
+        plt.title(f'Pearson Correlation Annotation vs Study counts ({bait_or_prey})\nr = {r:.3f}')
+        plt.savefig(f"work_folder/data/plots/{database}_plots/pearson_linear_counts_{bait_or_prey}.png", dpi = 300, bbox_inches = 'tight')
         plt.close()
 
 make_scatterplot()

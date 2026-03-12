@@ -42,17 +42,30 @@ rule get_HDO:
     script:
         "query_HDO.R"
 
-rule get_HDO_per_entrez:
+rule get_HDO_per_entrez_baits:
     input:
         b_count = "work_folder/data/intact/bait_count.csv",
         annotation_df = "work_folder/data/HDO/entrez_to_HDO.csv"
     output:
-        annotations_per_id = "work_folder/data/HDO/annotation_per_entrez.csv"
+        annotations_per_id = "work_folder/data/HDO/annotation_per_entrez_baits.csv"
     run:
-        df_freq = pd.read_csv(input.b_count, sep="\t")
+        df_studies = pd.read_csv(input.b_count, sep="\t")
         df_annot = pd.read_csv(input.annotation_df, sep="\t")
 
-        df = pd.merge(df_freq, df_annot, left_on="entrez_id_bait", right_on="entrez_id", how="right", suffixes=("_degree", "_annot"))
+        df = pd.merge(df_studies, df_annot, left_on="entrez_id_bait", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
         df.fillna(0, inplace=True)
         df.to_csv(output.annotations_per_id, sep="\t", index=False) 
-        # TODO compute the correlation and pvalue, also save plots
+
+rule get_HDO_per_entrez_preys:
+    input:
+        p_count = "work_folder/data/intact/prey_count.csv",
+        annotation_df = "work_folder/data/HDO/entrez_to_HDO.csv"
+    output:
+        annotations_per_id = "work_folder/data/HDO/annotation_per_entrez_preys.csv"
+    run:
+        df_studies = pd.read_csv(input.p_count, sep="\t")
+        df_annot = pd.read_csv(input.annotation_df, sep="\t")
+
+        df = pd.merge(df_studies, df_annot, left_on="entrez_id_prey", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
+        df.fillna(0, inplace=True)
+        df.to_csv(output.annotations_per_id, sep="\t", index=False) 

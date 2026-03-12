@@ -1,7 +1,7 @@
 include: "src/BaitUsage.smk"
 include: "src/GetAnnotationData.smk"
 include: "src/DfJoin.smk"
-include: "src/ComputeSpearman.smk"
+include: "src/ComputeCorrelationValues.smk"
 
 rule all:
     input:
