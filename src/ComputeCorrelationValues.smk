@@ -1,19 +1,17 @@
-rule get_spearman_correlation:
-    input:
-        input1 = "work_folder/data/{database}/annotation_per_entrez_baits.csv",
-        input2 = "work_folder/data/{database}/annotation_per_entrez_preys.csv"  
-    output:
-        plot1 = "work_folder/data/plots/{database}_plots/baits_spearman.png",
-        plot2 = "work_folder/data/plots/{database}_plots/preys_spearman.png"
-    script:
-        "compute_spearman.py"
+import pandas as pd
 
-rule get_pearson_correlation:
+ASPECTS = glob_wildcards(
+    "work_folder/data/GO/annotation_per_entrez_{aspect}_baits.csv"
+).aspect
+
+rule merge_annotation_dfs:
     input:
-        input1 = "work_folder/data/{database}/annotation_per_entrez_baits.csv",
-        input2 = "work_folder/data/{database}/annotation_per_entrez_preys.csv" 
+        go_dfs = expand(
+            "work_folder/data/GO/annotation_per_entrez_{aspect}_baits.csv",
+            aspect = ASPECTS
+        ),
+        hdo_df = "work_folder/data/HDO/annotation_per_entrez_baits.csv"
     output:
-        plot3 = "work_folder/data/plots/{database}_plots/baits_pearson.png",
-        plot4 = "work_folder/data/plots/{database}_plots/preys_pearson.png"
+        merged_df = "work_folder/data/correlaton/all_annotations.csv"
     script:
-        "compute_pearson.py"
+        "merge_dfs.py"

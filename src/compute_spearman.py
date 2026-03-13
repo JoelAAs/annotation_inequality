@@ -15,6 +15,13 @@ def get_database(input_path):
     database = path.parent.name
     return database
 
+def get_aspect(input_path):
+    name = input_path.split("/")[-1]
+    if get_bait_or_prey(input_path) == 'baits':
+        return name.replace("annotation_per_entrez_", "").replace("_baits.csv", "")
+    else:
+        return name.replace("annotation_per_entrez_", "").replace("_preys.csv", "")
+
 def plot_distributions(df, name, database): 
     study_counts = df['count_studies'].dropna()
     annotations = df['count_annot'].dropna()
@@ -58,6 +65,10 @@ def make_scatterplot():
         rho, pval = get_spearman_correlation(df)
         bait_or_prey = get_bait_or_prey(inputfile)
         database = get_database(inputfile)
+        if database == 'GO':
+            aspect = get_aspect(inputfile)
+        else:
+            aspect = ''
         plot_distributions(df, bait_or_prey, database)
 
         # Plot with linear counts
@@ -71,7 +82,7 @@ def make_scatterplot():
         plt.xlabel('Annotation Counts (log scale)')
         plt.ylabel('Study Counts (log scale)')
         plt.grid(True, alpha = 0.3)
-        plt.title(f'Spearman Correlation Annotation vs Study counts ({bait_or_prey})\nρ = {rho:.3f}')
+        plt.title(f'{database} {aspect} Spearman Correlation Annotation vs Study counts ({bait_or_prey})\nρ = {rho:.3f}')
 
         plt.savefig(outputfile, dpi = 300, bbox_inches = 'tight')
         plt.close()
@@ -86,7 +97,7 @@ def make_scatterplot():
         plt.ylabel('Study Counts')
         plt.grid(True, alpha = 0.3)
         plt.title(f'Spearman Correlation Annotation vs Study counts ({bait_or_prey})\nr = {rho:.3f}')
-        plt.savefig(f"work_folder/data/plots/{database}_plots/spearman_linear_counts_{bait_or_prey}.png", dpi = 300, bbox_inches = 'tight')
+        plt.savefig(f"work_folder/data/plots/{database}_plots/{aspect}spearman_linear_counts_{bait_or_prey}.png", dpi = 300, bbox_inches = 'tight')
         plt.close()
 
 make_scatterplot()

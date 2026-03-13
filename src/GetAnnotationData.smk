@@ -1,3 +1,4 @@
+import pandas as pd
 
 rule query_disgenet:
     input:
@@ -42,38 +43,66 @@ rule get_HDO:
     script:
         "query_HDO.R"
 
-rule get_HDO_per_entrez_baits:
-    input:
-        b_count = "work_folder/data/intact/bait_count.csv",
-        annotation_df = "work_folder/data/HDO/entrez_to_HDO.csv"
-    output:
-        annotations_per_id = "work_folder/data/HDO/annotation_per_entrez_baits.csv"
-    run:
-        df_studies = pd.read_csv(input.b_count, sep="\t")
-        df_annot = pd.read_csv(input.annotation_df, sep="\t")
-
-        df = pd.merge(df_studies, df_annot, left_on="entrez_id_bait", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
-        df.fillna(0, inplace=True)
-        df.to_csv(output.annotations_per_id, sep="\t", index=False) 
-
-rule get_HDO_per_entrez_preys:
-    input:
-        p_count = "work_folder/data/intact/prey_count.csv",
-        annotation_df = "work_folder/data/HDO/entrez_to_HDO.csv"
-    output:
-        annotations_per_id = "work_folder/data/HDO/annotation_per_entrez_preys.csv"
-    run:
-        df_studies = pd.read_csv(input.p_count, sep="\t")
-        df_annot = pd.read_csv(input.annotation_df, sep="\t")
-
-        df = pd.merge(df_studies, df_annot, left_on="entrez_id_prey", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
-        df.fillna(0, inplace=True)
-        df.to_csv(output.annotations_per_id, sep="\t", index=False) 
-
 rule get_GO:
     input:
         bp_frequencies = "work_folder/data/intact/bait_prey_frequencies.pq"
     output:
-        annotation_df_BP = "work_folder/data/GO/entrez_to_GO_BP.csv"
-    run: 
+        annotation_df_BP = "work_folder/data/GO/entrez_to_GO_BP.csv",
+        annotation_df_MF = "work_folder/data/GO/entrez_to_GO_MF.csv",
+        annotation_df_CC = "work_folder/data/GO/entrez_to_GO_CC.csv"
+    script: 
         "query_GO.py"
+
+rule get_annotations_per_entrez_HDO:
+    input:
+        b_count = "work_folder/data/intact/bait_count.csv",
+        p_count = "work_folder/data/intact/prey_count.csv",
+        annotation_df = "work_folder/data/HDO/entrez_to_HDO.csv"
+    output:
+        annotations_per_id_baits = "work_folder/data/HDO/annotation_per_entrez_baits.csv",
+        annotations_per_id_preys = "work_folder/data/HDO/annotation_per_entrez_preys.csv"
+    run:
+        df_annot = pd.read_csv(input.annotation_df, sep="\t")
+        df_studies_baits = pd.read_csv(input.b_count, sep="\t")
+        df_studies_preys = pd.read_csv(input.p_count, sep="\t")
+
+        '''
+        Bait annotation counts
+        '''
+        df = pd.merge(df_studies_baits, df_annot, left_on="entrez_id_bait", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
+        df.fillna(0, inplace=True)
+        df.to_csv(output.annotations_per_id_baits, sep="\t", index=False)
+
+        '''
+        Prey annotation counts
+        '''
+        df = pd.merge(df_studies_preys, df_annot, left_on="entrez_id_prey", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
+        df.fillna(0, inplace=True)
+        df.to_csv(output.annotations_per_id_preys, sep="\t", index=False)
+        
+rule get_annotations_per_entrez_GO:
+    input:
+        b_count = "work_folder/data/intact/bait_count.csv",
+        p_count = "work_folder/data/intact/prey_count.csv",
+        annotation_df = "work_folder/data/GO/entrez_to_GO_{aspect}.csv"
+    output:
+        annotations_per_id_baits = "work_folder/data/GO/annotation_per_entrez_{aspect}_baits.csv",
+        annotations_per_id_preys = "work_folder/data/GO/annotation_per_entrez_{aspect}_preys.csv"
+    run:
+        df_annot = pd.read_csv(input.annotation_df, sep="\t")
+        df_studies_baits = pd.read_csv(input.b_count, sep="\t")
+        df_studies_preys = pd.read_csv(input.p_count, sep="\t")
+
+        '''
+        Bait annotation counts
+        '''
+        df = pd.merge(df_studies_baits, df_annot, left_on="entrez_id_bait", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
+        df.fillna(0, inplace=True)
+        df.to_csv(output.annotations_per_id_baits, sep="\t", index=False)
+
+        '''
+        Prey annotation counts
+        '''
+        df = pd.merge(df_studies_preys, df_annot, left_on="entrez_id_prey", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
+        df.fillna(0, inplace=True)
+        df.to_csv(output.annotations_per_id_preys, sep="\t", index=False)        
