@@ -10,6 +10,7 @@ method = snakemake.wildcards.method
 corr_df = pd.read_csv(inputfile, sep = '\t', index_col = 0)
 corr_df = corr_df.rename(columns = {'count_studies': 'Bait count',
                                     'count_annot_hdo': 'HDO',
+                                    'count_annot_disgenet': 'DISGENET',
                                     'count_annot_bp': 'GO:BP',
                                     'count_annot_mf': 'GO:MF',
                                     'count_annot_cc': 'GO:CC'})

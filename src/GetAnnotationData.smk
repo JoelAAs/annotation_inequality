@@ -2,18 +2,22 @@ import pandas as pd
 
 rule query_disgenet:
     input:
-        bp_frequencies = "work_folder/data/intact/bait_prey_frequencies.pq"
+        bp_frequencies = "work_folder/data/intact/bait_prey_uniprot_ids.pq"
     output:
         annotation_df = "work_folder/data/disgenet/uniprot_to_disgenet.csv"
     script: "query_disgenet.R"
 
 
-rule get_annotations_per_id:
+rule get_annotations_per_entrez_DISGENET:
     input:
+        b_count = "work_folder/data/intact/bait_count.csv",
+        p_count = "work_folder/data/intact/prey_count.csv",
         annotation_df = "work_folder/data/disgenet/uniprot_to_disgenet.csv"
     output:
-        annotations_per_id = "work_folder/data/disgenet/annotation_per_uniprot.csv"
+        annotations_per_id_baits = "work_folder/data/disgenet/annotation_per_entrez_baits.csv",
+        annotations_per_id_preys = "work_folder/data/disgenet/annotation_per_entrez_preys.csv"
     run:
+        '''
         current_id = "uniprotids"
         current_annotations =  []
     
@@ -33,6 +37,31 @@ rule get_annotations_per_id:
                         current_annotations = [values[3],]
                     else:
                         current_annotations.append(values[3]) # TODO last protein is not written
+        '''
+
+        df_annot = pd.read_csv(input.annotation_df, sep ='\t')
+        df_studies_baits = pd.read_csv(input.b_count, sep="\t")
+        df_studies_preys = pd.read_csv(input.p_count, sep="\t")
+
+        df_annot = df_annot[['geneid', 'diseaseUMLSCUI']]
+        df_annot = df_annot.drop_duplicates(subset = ['geneid', 'diseaseUMLSCUI'])
+        annot_count = df_annot.groupby('geneid').size().reset_index(name = 'count')
+        annot_count = annot_count.dropna()
+        annot_count = annot_count.rename(columns = {'geneid': 'entrez_id'})
+
+        '''
+        Bait annotation counts
+        '''
+        df = pd.merge(df_studies_baits, annot_count, left_on="entrez_id_bait", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
+        df.fillna(0, inplace=True)
+        df.to_csv(output.annotations_per_id_baits, sep="\t", index=False)
+
+        '''
+        Prey annotation counts
+        '''
+        df = pd.merge(df_studies_preys, annot_count, left_on="entrez_id_prey", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
+        df.fillna(0, inplace=True)
+        df.to_csv(output.annotations_per_id_preys, sep="\t", index=False)     
 
 
 rule get_HDO:

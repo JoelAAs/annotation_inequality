@@ -10,6 +10,7 @@ def get_go_dfs(go_dfs_list):
 
 go_dfs_list = snakemake.input.go_dfs
 hdo_df_input = snakemake.input.hdo_df
+disgenet_df_input = snakemake.input.disgenet_df
 outputfile = snakemake.output.merged_df
 
 go_dfs = get_go_dfs(go_dfs_list)
@@ -17,11 +18,13 @@ bp_df = go_dfs.get('BP')
 mf_df = go_dfs.get('MF')
 cc_df = go_dfs.get('CC')
 hdo_df = pd.read_csv(hdo_df_input, sep = '\t')
+disgenet_df = pd.read_csv(disgenet_df_input, sep = '\t')
 
-dfs = [bp_df, mf_df, cc_df]
+dfs = [disgenet_df, bp_df, mf_df, cc_df]
 for df in dfs:
     df = df.drop(columns = ['entrez_id_bait', 'count_studies'], inplace = True)
 
+disgenet_df = disgenet_df.rename(columns = {'count_annot': 'count_annot_disgenet'}, inplace = True)
 bp_df = bp_df.rename(columns = {'count_annot': 'count_annot_bp'}, inplace = True)
 mf_df = mf_df.rename(columns = {'count_annot': 'count_annot_mf'}, inplace = True)
 cc_df = cc_df.rename(columns = {'count_annot': 'count_annot_cc'}, inplace = True)

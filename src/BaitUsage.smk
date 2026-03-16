@@ -43,7 +43,27 @@ def detect_and_join_isoform(x):
         if not split[1].isdigit():
             return "-".join(split)
     return split[0]
-        
+
+rule get_uniprot_ids:
+    input:
+        bp_df = "work_folder/data/intact/bait_prey_publications.pq"
+    output:
+        bp_frequencies = "work_folder/data/intact/bait_prey_uniprot_ids.pq"
+    run:
+        bp_df = pd.read_parquet(input.bp_df)
+        bp_df["uniprot_id_bait"] = bp_df["uniprot_id_bait"].apply(detect_and_join_isoform)
+        bp_df["uniprot_id_prey"] = bp_df["uniprot_id_prey"].apply(detect_and_join_isoform)
+        G_bp = nx.from_pandas_edgelist(bp_df,"uniprot_id_bait", "uniprot_id_prey",create_using=nx.DiGraph)
+        degree_prey = pd.DataFrame(G_bp.in_degree())
+        degree_prey["type"] = "prey"
+        degree_bait = pd.DataFrame(G_bp.out_degree())
+        degree_bait["type"] = "bait"
+
+        bp_frequencies = pd.concat([degree_bait, degree_prey], ignore_index=True)
+        bp_frequencies.columns = ["uniprot_id", "count", "type"]
+        bp_frequencies.to_parquet(
+            output.bp_frequencies
+        )    
     
 rule get_bait_prey_usage:
     input:

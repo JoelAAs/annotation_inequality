@@ -11,7 +11,7 @@ df_frequencies <- read_parquet(
 )
 
 df_frequencies <- read_parquet(
-  "work_folder/data/intact/bait_prey_frequecies.pq"
+  "work_folder/data/intact/bait_prey_uniprot_ids.pq"
 )
 
 output_annotation_file <- snakemake@output$annotation_df
@@ -42,13 +42,13 @@ for (i in 1:ceiling(n_ids / batch_size)) {
       results@qresult[
         ,
         c(
-          "gene_symbol", "uniprotids",
+          "gene_symbol", "geneid", "uniprotids",
           "disease_name", "diseaseUMLSCUI", "score",
           "yearInitial", "yearFinal"
         )
       ]
     )
-    tab <- tab[order(tab$uniprotids), ]
+    tab <- tab[order(tab$geneid), ]
     if (header) {
       write.table(
         tab,
