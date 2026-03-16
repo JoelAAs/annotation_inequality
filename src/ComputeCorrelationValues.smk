@@ -15,3 +15,22 @@ rule merge_annotation_dfs:
         merged_df = "work_folder/data/correlaton/all_annotations.csv"
     script:
         "merge_dfs.py"
+
+
+rule get_correlation_matrix:
+    input:
+        merged_df = "work_folder/data/correlaton/all_annotations.csv"
+    output:
+        correlation_values = "work_folder/data/correlaton/corr_matrix_{method}.csv",
+    params:
+        method = "{method}"
+    script:
+        "compute_correlation_matrix.py"
+
+rule plot_correlation_matrix:
+    input:
+        correlation_values = "work_folder/data/correlaton/corr_matrix_{method}.csv"
+    output:
+        correlation_matrix = "work_folder/data/correlaton/corr_matrix_{method}.png"
+    script:
+        "plot_correlation_matrix.py"
