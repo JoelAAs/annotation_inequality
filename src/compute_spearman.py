@@ -37,7 +37,7 @@ def plot_distributions(df, name, database):
     ax2.hist(annotations[annotations > 0], bins = 50, alpha = 0.7, color = 'skyblue', edgecolor = 'navy')
     ax2.set_xlabel('Annotation counts')
     ax2.set_ylabel('Frequency')
-    ax2.set_title(f'Annotation counts distribution ({name})')
+    ax2.set_title(f'{database} Annotation counts distribution ({name})')
     ax2.set_yscale('log')
 
     plt.tight_layout()
