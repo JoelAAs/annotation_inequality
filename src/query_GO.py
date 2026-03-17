@@ -1,7 +1,5 @@
 import pandas as pd 
 import mygene
-from pathlib import Path
-import os
 
 # Args
 input_pod = snakemake.input.bp_frequencies

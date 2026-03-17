@@ -22,7 +22,7 @@ def get_aspect(input_path):
     else:
         return name.replace("annotation_per_entrez_", "").replace("_preys.csv", "")
 
-def plot_distributions(df, name, database): 
+def plot_distributions(df, name, database, aspect): 
     study_counts = df['count_studies'].dropna()
     annotations = df['count_annot'].dropna()
 
@@ -37,11 +37,11 @@ def plot_distributions(df, name, database):
     ax2.hist(annotations[annotations > 0], bins = 50, alpha = 0.7, color = 'skyblue', edgecolor = 'navy')
     ax2.set_xlabel('Annotation counts')
     ax2.set_ylabel('Frequency')
-    ax2.set_title(f'{database} Annotation counts distribution ({name})')
+    ax2.set_title(f'{database} {aspect} Annotation counts distribution ({name})')
     ax2.set_yscale('log')
 
     plt.tight_layout()
-    plt.savefig(f"work_folder/data/plots/{database}_plots/{name}distributions.png")
+    plt.savefig(f"work_folder/data/plots/{database}_plots/{aspect}{name}distributions.png")
 
 def get_pearson_correlation(df):
     x = df['count_annot']
@@ -69,7 +69,7 @@ def make_scatterplot():
             aspect = get_aspect(inputfile)
         else:
             aspect = ''
-        plot_distributions(df, bait_or_prey, database)
+        plot_distributions(df, bait_or_prey, database, aspect)
 
         # Plot with log counts
         plt.figure(figsize = (10, 8))

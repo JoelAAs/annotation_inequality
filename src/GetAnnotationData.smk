@@ -82,6 +82,18 @@ rule get_GO:
     script: 
         "query_GO.py"
 
+rule get_GO_with_given_depth:
+    input:
+        bp_frequencies = "work_folder/data/intact/bait_prey_frequencies.pq"
+    output:
+        annotation_df_BP = "work_folder/data/GO/entrez_to_GO_BP_depth_{depth}.csv",
+        annotation_df_MF = "work_folder/data/GO/entrez_to_GO_MF_depth_{depth}.csv",
+        annotation_df_CC = "work_folder/data/GO/entrez_to_GO_CC_depth_{depth}.csv"
+    params:
+        depth = "{depth}"
+    script: 
+        "query_GO_with_depth.py"
+
 rule get_annotations_per_entrez_HDO:
     input:
         b_count = "work_folder/data/intact/bait_count.csv",
