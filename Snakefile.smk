@@ -3,6 +3,7 @@ include: "src/GetAnnotationData.smk"
 include: "src/DfJoin.smk"
 include: "src/PrintCorrelationValuesPlots.smk"
 include: "src/ComputeCorrelationValues.smk"
+include: "src/FeatureMatrix.smk"
 
 rule all:
     input:
