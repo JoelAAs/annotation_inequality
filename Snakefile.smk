@@ -4,6 +4,7 @@ include: "src/DfJoin.smk"
 include: "src/PrintCorrelationValuesPlots.smk"
 include: "src/ComputeCorrelationValues.smk"
 include: "src/FeatureMatrix.smk"
+include: "src/ElasticNet.smk"
 
 rule all:
     input:
