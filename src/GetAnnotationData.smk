@@ -72,28 +72,6 @@ rule get_HDO:
     script:
         "query_HDO.R"
 
-rule get_GO:
-    input:
-        bp_frequencies = "work_folder/data/intact/bait_prey_frequencies.pq"
-    output:
-        annotation_df_BP = "work_folder/data/GO/entrez_to_GO_BP.csv",
-        annotation_df_MF = "work_folder/data/GO/entrez_to_GO_MF.csv",
-        annotation_df_CC = "work_folder/data/GO/entrez_to_GO_CC.csv"
-    script: 
-        "query_GO.py"
-
-rule get_GO_with_given_depth:
-    input:
-        bp_frequencies = "work_folder/data/intact/bait_prey_frequencies.pq"
-    output:
-        annotation_df_BP = "work_folder/data/GO/entrez_to_GO_BP_depth_{depth}.csv",
-        annotation_df_MF = "work_folder/data/GO/entrez_to_GO_MF_depth_{depth}.csv",
-        annotation_df_CC = "work_folder/data/GO/entrez_to_GO_CC_depth_{depth}.csv"
-    params:
-        depth = "{depth}"
-    script: 
-        "query_GO_with_depth.py"
-
 rule get_annotations_per_entrez_HDO:
     input:
         b_count = "work_folder/data/intact/bait_count.csv",
@@ -120,6 +98,28 @@ rule get_annotations_per_entrez_HDO:
         df = pd.merge(df_studies_preys, df_annot, left_on="entrez_id_prey", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
         df.fillna(0, inplace=True)
         df.to_csv(output.annotations_per_id_preys, sep="\t", index=False)
+
+rule get_GO:
+    input:
+        bp_frequencies = "work_folder/data/intact/bait_prey_frequencies.pq"
+    output:
+        annotation_df_BP = "work_folder/data/GO/entrez_to_GO_BP.csv",
+        annotation_df_MF = "work_folder/data/GO/entrez_to_GO_MF.csv",
+        annotation_df_CC = "work_folder/data/GO/entrez_to_GO_CC.csv"
+    script: 
+        "query_GO.py"
+
+rule get_GO_with_given_depth:
+    input:
+        bp_frequencies = "work_folder/data/intact/bait_prey_frequencies.pq"
+    output:
+        annotation_df_BP = "work_folder/data/GO/entrez_to_GO_BP_depth_{depth}.csv",
+        annotation_df_MF = "work_folder/data/GO/entrez_to_GO_MF_depth_{depth}.csv",
+        annotation_df_CC = "work_folder/data/GO/entrez_to_GO_CC_depth_{depth}.csv"
+    params:
+        depth = "{depth}"
+    script: 
+        "query_GO_with_depth.py"
         
 rule get_annotations_per_entrez_GO:
     input:

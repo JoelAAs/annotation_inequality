@@ -40,5 +40,7 @@ full <- full %>%
     summarise(annotations = list(annotation))
 full$annotations <- sapply(full$annotations, function(x) paste(x, collapse = ";"))
 
+print("HDO annotations obtained!")
+
 write.table(full, output_pod_df, sep = "\t", row.names = FALSE)
 write.table(annotations_list, output_pod_list, sep = '\t', row.names = FALSE)

@@ -45,7 +45,7 @@ for aspect in ASPECTS:
     print(f'GO {aspect} annotations obtained!')
 
     final_df = pd.DataFrame(rows).drop_duplicates(subset=['entrez_id', 'go_id', 'go_term_name'])    
-    annot_list = final_df['go_term_name']
+    annot_list = final_df[['go_term_name']]
     annot_list = annot_list.drop_duplicates()
 
     final_df.to_csv(output_df, sep='\t', index=False)
