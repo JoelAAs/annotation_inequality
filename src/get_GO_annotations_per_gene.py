@@ -7,8 +7,12 @@ input_df = snakemake.input.bp_frequencies
 mg = mygene.MyGeneInfo()
 df = pd.read_parquet(input_df)
 df = df.drop_duplicates(subset = 'entrez_id')
+num_rows = df.shape[0]
+print(f'Unique entrez_ids = {num_rows}\n')
+all_genes = df[['entrez_id']]
 
 for aspect in ASPECTS:
+    print(f'Obtaining GO {aspect} annotations...')
     output_df = [p for p in snakemake.output.annotation_df if f"{aspect}_" in p][0]
     output_list = [p for p in snakemake.output.annotation_list if f"{aspect}_" in p][0]
 
@@ -39,14 +43,22 @@ for aspect in ASPECTS:
                 'entrez_id': entrez_id,
                 'go_id': go_entries.get('id'),
                 'go_term_name': go_entries.get('term')
-            })
+            }) 
+    
+    final_df = pd.DataFrame(rows).drop_duplicates(subset=['entrez_id', 'go_id', 'go_term_name'])
+    unique_values = final_df['entrez_id'].unique()
+    unique_count = len(unique_values)
+    print(f'Unique entrez_ids after GO {aspect} query = {unique_count}\n') 
 
-        
-    print(f'GO {aspect} annotations obtained!')
-
-    final_df = pd.DataFrame(rows).drop_duplicates(subset=['entrez_id', 'go_id', 'go_term_name'])    
     annot_list = final_df[['go_term_name']]
     annot_list = annot_list.drop_duplicates()
+    final_df = pd.merge(all_genes, final_df, on = 'entrez_id', how = 'left')    
+
+    unique_values = final_df['entrez_id'].unique()
+    unique_count = len(unique_values)
+    print(f'Unique entrez_ids after GO {aspect} final df = {unique_count}\n')
 
     final_df.to_csv(output_df, sep='\t', index=False)
     annot_list.to_csv(output_list, sep='\t', index=False)
+
+    print(f'GO {aspect} annotations obtained!')

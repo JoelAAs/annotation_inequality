@@ -6,6 +6,7 @@ outputfile = snakemake.output.feature_matrix
 df = pd.read_csv(input_df, sep = '\t')
 
 df['value'] = 1
+print(f'Creating DISGENET feature matrix...')
 
 df_onehot = df.pivot_table(
     index = 'entrez_id',

@@ -53,6 +53,7 @@ rule get_annotations_per_entrez_DISGENET:
         Bait annotation counts
         '''
         df = pd.merge(df_studies_baits, annot_count, left_on="entrez_id_bait", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
+        df = df[df['entrez_id_bait'].notna()]
         df.fillna(0, inplace=True)
         df.to_csv(output.annotations_per_id_baits, sep="\t", index=False)
 
@@ -60,6 +61,7 @@ rule get_annotations_per_entrez_DISGENET:
         Prey annotation counts
         '''
         df = pd.merge(df_studies_preys, annot_count, left_on="entrez_id_prey", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
+        df = df[df['entrez_id_prey'].notna()]
         df.fillna(0, inplace=True)
         df.to_csv(output.annotations_per_id_preys, sep="\t", index=False)     
 
@@ -89,6 +91,7 @@ rule get_annotations_per_entrez_HDO:
         Bait annotation counts
         '''
         df = pd.merge(df_studies_baits, df_annot, left_on="entrez_id_bait", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
+        df = df[df['entrez_id_bait'].notna()]
         df.fillna(0, inplace=True)
         df.to_csv(output.annotations_per_id_baits, sep="\t", index=False)
 
@@ -96,6 +99,7 @@ rule get_annotations_per_entrez_HDO:
         Prey annotation counts
         '''
         df = pd.merge(df_studies_preys, df_annot, left_on="entrez_id_prey", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
+        df = df[df['entrez_id_prey'].notna()]
         df.fillna(0, inplace=True)
         df.to_csv(output.annotations_per_id_preys, sep="\t", index=False)
 
@@ -138,6 +142,7 @@ rule get_annotations_per_entrez_GO:
         Bait annotation counts
         '''
         df = pd.merge(df_studies_baits, df_annot, left_on="entrez_id_bait", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
+        df = df[df['entrez_id_bait'].notna()]
         df.fillna(0, inplace=True)
         df.to_csv(output.annotations_per_id_baits, sep="\t", index=False)
 
@@ -145,5 +150,6 @@ rule get_annotations_per_entrez_GO:
         Prey annotation counts
         '''
         df = pd.merge(df_studies_preys, df_annot, left_on="entrez_id_prey", right_on="entrez_id", how="right", suffixes=("_studies", "_annot"))
+        df = df[df['entrez_id_prey'].notna()]
         df.fillna(0, inplace=True)
         df.to_csv(output.annotations_per_id_preys, sep="\t", index=False)        

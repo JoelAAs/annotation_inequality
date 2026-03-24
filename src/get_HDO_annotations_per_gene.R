@@ -15,6 +15,12 @@ pod_df <- read_parquet(
     input_pod
 )
 
+pod_df <- pod_df %>%
+    distinct(entrez_id)
+cat("Unique entrez_id values in bp_frequencies = ", length(unique(pod_df$entrez_id)))
+all_genes <- data.frame(entrez_id = pod_df$entrez_id)
+all_genes <- all_genes %>% mutate(entrez_id = as.character(entrez_id))
+
 ### Processing
 doids <- select(
     x = HDO.db,
@@ -22,23 +28,20 @@ doids <- select(
     columns = c("doid", "term")
 )
 
+cat("Unique entrez_id values after HDO query = ", length(unique(pod_df$entrez_id)))
+
 colnames(doids) <- c("doid", "entrez_id", "annotation")
-pod_df <- pod_df %>%
-    distinct(entrez_id, .keep_all = TRUE)
 
-full <- merge(doids, pod_df, by = "entrez_id", all = TRUE)
-full <- full[, c("entrez_id", "annotation")]
-full <- na.omit(full)
+doids <- doids[!duplicated(doids), ]
 
-annotations_list <- full %>%
+annotations_list <- doids %>%
     distinct(annotation, .keep_all = TRUE)
 annotations_list <- annotations_list[, "annotation", drop = FALSE]
 
-full <- full %>%
-    distinct(entrez_id, annotation) %>%
-    group_by(entrez_id) %>%
-    summarise(annotations = list(annotation))
-full$annotations <- sapply(full$annotations, function(x) paste(x, collapse = ";"))
+full <- doids %>%
+    full_join(all_genes, by = "entrez_id")
+
+cat("Unique entrez_id values after adding ids with no annotations = ", length(unique(pod_df$entrez_id)))
 
 print("HDO annotations obtained!")
 

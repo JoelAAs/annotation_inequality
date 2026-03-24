@@ -5,6 +5,7 @@ include: "src/PrintCorrelationValuesPlots.smk"
 include: "src/ComputeCorrelationValues.smk"
 include: "src/FeatureMatrix.smk"
 include: "src/ElasticNet.smk"
+include: "src/AnnotationDepth.smk"
 
 rule all:
     input:

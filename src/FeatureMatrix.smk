@@ -1,8 +1,11 @@
 ASPECTS = ['BP', 'MF', 'CC']
+INPUT_FILES_GO = [f"work_folder/data/GO/{aspect}_annotations_per_gene_with_depth.csv" for aspect in ASPECTS]
+OUTPUT_FOLDERS_GO = [directory(f"work_folder/data/GO/feature_matrices/{aspect}") for aspect in ASPECTS]
+HDO_DEPTHS = list(range(0, 11))
 
 rule get_disgenet_annotations:
     input:
-        annotation_df = "work_folder/data/disgenet/uniprot_to_disgenet.csv"
+        bait_ids = "work_folder/data/disgenet/annotation_per_entrez_baits.csv"
     output:
         annotation_df = "work_folder/data/disgenet/annotations_per_gene.csv",
         annotation_list = "work_folder/data/disgenet/all_annotations.csv"
@@ -28,9 +31,10 @@ rule get_HDO_annotations:
 
 rule compute_HDO_feature_matrix:
     input:
-        annotation_df = "work_folder/data/HDO/annotations_per_gene.csv"
+        annotation_df = "work_folder/data/HDO/annotations_per_gene_with_depth.csv"
     output:
-        feature_matrix = "work_folder/data/HDO/feature_matrix.csv"
+        feature_matrix = expand("work_folder/data/HDO/feature_matrices/feature_matrix_with_depth_{hdo_depth}.csv", hdo_depth = HDO_DEPTHS),
+        annotations_per_depth = "work_folder/data/HDO/annotations_per_depth.csv"
     script:
         "compute_HDO_feature_matrix.py"
 
@@ -45,9 +49,9 @@ rule get_GO_annotations:
 
 rule compute_GO_feature_matrix:
     input:
-        annotation_df = expand("work_folder/data/GO/{aspect}_annotations_per_gene.csv", aspect = ASPECTS)
+        INPUT_FILES_GO
     output:
-        feature_matrix = expand("work_folder/data/GO/{aspect}_feature_matrix.csv", aspect = ASPECTS)
+        OUTPUT_FOLDERS_GO
     script:
-        "compute_GO_feature_matrix.py"
+        "compute_GO_feature_matrices.py"
         
