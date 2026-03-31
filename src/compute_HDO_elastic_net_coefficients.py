@@ -34,7 +34,7 @@ for feat_matrix, outputfile in zip(input_feat_matrix, output_coefficients):
     model.fit(X,y)
 
     coef_df = pd.DataFrame({
-        'HDO_Term': df_annot.columns,
+        'HDO_doid': df_annot.columns,
         'Coefficient': model.coef_
     })
 

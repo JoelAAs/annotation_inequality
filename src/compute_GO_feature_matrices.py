@@ -1,7 +1,10 @@
 import pandas as pd
 import os
 
-for input_df, output_dir in zip(snakemake.input, snakemake.output):
+for input_df, output_dir, textfile, depthfile in zip(snakemake.input, snakemake.output.feature_dirs, snakemake.output.annotations_per_depth, snakemake.output.min_aspect_depths):
+    with open(depthfile, 'w') as f:
+        f.write(f'aspect:min_depth\n')
+
     aspect = os.path.basename(input_df).split('_')[0]
     df = pd.read_csv(input_df, sep = '\t')
     df = df.drop(columns = 'go_id')
@@ -10,11 +13,14 @@ for input_df, output_dir in zip(snakemake.input, snakemake.output):
         'annotation': 'No_annot',
         'depth': -1    
     }, inplace = True)
+
+    with open(textfile, 'w') as f:
+        f.write(f'depth:n_of_coefficients\n')
     
-    max_depth = int(df['depth'].max())
+    min_depth = int(df['depth'].max())
     os.makedirs(output_dir, exist_ok = True)
 
-    for depth in range(max_depth + 1):
+    for depth in range(min_depth + 1):
         print(f'Processing GO {aspect} feature matrix with depth {depth}...')
 
         outputfile = os.path.join(output_dir, f'feature_matrix_with_depth_{depth}.csv')
@@ -35,6 +41,11 @@ for input_df, output_dir in zip(snakemake.input, snakemake.output):
 
         print(f'Unique annotations = {len(df_onehot.columns)}')
 
+        with open(textfile, 'a') as f:
+            f.write(f'{depth}:{len(df_onehot.columns)}\n')
 
         df_onehot.to_csv(outputfile, sep = '\t', index = False)
         print(f'GO {aspect} feature matrix with depth {depth} ready!')
+
+    with open(depthfile, 'a') as f:
+        f.write(f'{aspect}:{min_depth}\n')

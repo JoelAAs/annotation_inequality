@@ -4,10 +4,12 @@ import matplotlib.pyplot as plt
 from collections import Counter
 
 input_coeff = snakemake.input.elastic_net_coefficients
-input_textfile = snakemake.input.annotations_per_depth
+input_annot_x_depth = snakemake.input.annotations_per_depth
+input_genes_x_depth = snakemake.input.genes_per_depth
 output_top = snakemake.output.top_coefficients
 output_distrib = snakemake.output.coefficients_distribution
-output_plot = snakemake.output.annotations_per_depth_plot
+output_annot_x_depth = snakemake.output.annotations_per_depth_plot
+output_genes_x_depth = snakemake.output.genes_per_depth_plot
 
 for coefficients, top_coeff, distrib in zip(input_coeff, output_top, output_distrib):
     df = pd.read_csv(coefficients, sep = '\t')
@@ -27,8 +29,6 @@ for coefficients, top_coeff, distrib in zip(input_coeff, output_top, output_dist
     print("Associations retrieved!")
 
     print(f'Plotting plots for full depth {depth} HDO coefficients...')
-    
-    print(f'Plotting plots for depth {depth} HDO coefficients...')
 
     # Plot the top 20 positive and negative coefficients
     top_n = 20
@@ -41,7 +41,7 @@ for coefficients, top_coeff, distrib in zip(input_coeff, output_top, output_dist
     plt.figure(figsize = (16 ,8))
     plt.barh(df_plot['HDO_term'], df_plot['Coefficient'], color = df_plot['color'])
     plt.xlabel('Coefficient')
-    plt.title(f'Top depth {depth} HDO Elastic Net Coefficients (Green = Positive, Red = Negative)')
+    plt.title(f'Top depth {depth} HDO full Elastic Net Coefficients (Green = Positive, Red = Negative)')
     plt.gca().invert_yaxis()
     plt.xticks(rotation = 0)
     plt.yticks(rotation = 0)
@@ -62,16 +62,16 @@ for coefficients, top_coeff, distrib in zip(input_coeff, output_top, output_dist
     plt.yscale('log')
     plt.xlabel('Coefficient value')
     plt.ylabel('Frequency (log-scale)')
-    plt.title(f'Histogram of depth {depth} HDO Elastic Net Coefficients')
+    plt.title(f'Histogram of depth {depth} HDO full Elastic Net Coefficients')
     plt.legend([f'Total coefficients = {total_coefs}'], loc='upper right')
     plt.savefig(distrib, dpi = 300)
     plt.close()
     
-    print(f'Plots for depth {depth} done!')
-    
-print(f'Plotting HDO coefficient counts per depth...')
+    print(f'Plots for full depth {depth} done!')
 
-df_textfile = pd.read_csv(input_textfile, sep = ':')
+print(f'Plotting full HDO coefficient counts per depth...')
+
+df_textfile = pd.read_csv(input_annot_x_depth, sep = ':')
 
 x = df_textfile['depth']
 y = df_textfile['n_of_coefficients']
@@ -81,9 +81,28 @@ plt.bar(x, y, color = 'skyblue', edgecolor = 'black')
 plt.yscale('log')
 plt.xlabel('Depth')
 plt.ylabel('Number of Coefficients (log-scale)')
-plt.title('Number of HDO Coefficients per Depth Level')
+plt.title('Number of HDO full Coefficients per Depth Level')
 plt.xticks(x)
-plt.savefig(output_plot, dpi = 300)
+plt.savefig(output_annot_x_depth, dpi = 300)
 plt.close()
 
-print(f'Coefficient counts per depth plotted!')
+print(f'Full gene counts per depth plotted!')
+
+print(f'Plotting full HDO gene counts per depth...')
+
+df_textfile = pd.read_csv(input_genes_x_depth, sep = ':')
+
+x = df_textfile['depth']
+y = df_textfile['n_of_genes']
+
+plt.figure(figsize = (8, 6))
+plt.bar(x, y, color = 'skyblue', edgecolor = 'black')
+plt.yscale('log')
+plt.xlabel('Depth')
+plt.ylabel('Number of genes (log-scale)')
+plt.title('Number of HDO full Genes per Depth Level')
+plt.xticks(x)
+plt.savefig(output_genes_x_depth, dpi = 300)
+plt.close()
+
+print(f'Full gene counts per depth plotted!')

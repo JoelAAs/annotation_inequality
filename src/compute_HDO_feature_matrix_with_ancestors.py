@@ -1,6 +1,6 @@
 import pandas as pd
 
-input_df = snakemake.input.annotation_df
+input_df = snakemake.input.complete_annotations
 outputs = snakemake.output.feature_matrix
 textfile = snakemake.output.annotations_per_depth
 counts = snakemake.output.counts_per_annot
@@ -8,7 +8,6 @@ counts = snakemake.output.counts_per_annot
 df = pd.read_csv(input_df, sep = '\t')
 df.fillna({
     'doid': 'No_doid',
-    'annotation': 'No_annot',
     'depth': -1
 }, inplace=True)
 
