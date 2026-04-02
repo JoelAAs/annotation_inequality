@@ -8,6 +8,7 @@ include: "src/AddAncestors.smk"
 include: "src/ElasticNet.smk"
 include: "src/AnnotationDepth.smk"
 include: "src/AnnotVSGeneCount.smk"
+include: "src/CutoffsUpdated.smk"
 
 rule all:
     input:
@@ -31,5 +32,25 @@ rule all:
             # All number of coefficients per depth level
             f"work_folder/data/ElasticNet/GO/plots/{aspect}/annotations_per_depth.png"
             for aspect in ASPECTS 
+        ],
+        # All HDO cutoff necessary files
+        lambda wc: [
+            # All complete feature matrices with all cutoffs
+            f"work_folder/data/HDO/cutoff/feature_matrices/complete_feature_matrix_cutoff_{cutoff}.csv"
+            for cutoff in CUTOFFS
+        ] + [
+            # All complete elastic net coefficients with all cutoffs
+            f"work_folder/data/ElasticNet/HDO_cutoff/EN_coefficients/complete_elastic_net_coefficients_cutoff_{cutoff}.csv"
+            for cutoff in CUTOFFS
+        ] + [
+            # All complete top 20 plots with all cutoffs
+            f"work_folder/data/ElasticNet/HDO_cutoff/plots/Top/complete_top_coefficients_cutoff_{cutoff}.png"
+            for cutoff in CUTOFFS
+        ] + [
+            # All complete distribution coefficients with all cutoffs
+            f"work_folder/data/ElasticNet/HDO_cutoff/plots/Distribution/complete_coefficients_distribution_cutoff_{cutoff}.png"
+            for cutoff in CUTOFFS
+        ] + [
+            # DOIDs lost plot
+            "work_folder/data/ElasticNet/HDO_cutoff/plots/complete_HDO_doids_lost.png"
         ]
-        
