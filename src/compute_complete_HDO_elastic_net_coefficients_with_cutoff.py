@@ -8,7 +8,7 @@ input_matrix = snakemake.input.complete_matrix
 input_df_bait_usage = snakemake.input.bait_usage
 output_coefficients = snakemake.output.complete_elastic_net_coefficients
 
-print("Processing complete HDO Elastic Net coefficients with cutoff {cutoff}...\n")
+print(f"Processing complete HDO Elastic Net coefficients with cutoff {cutoff}...\n")
 
 print("Loading input dfs...")
 
@@ -65,4 +65,4 @@ coef_df.to_csv(output_coefficients, sep = '\t', index = False)
 
 print("Coefficients saved!\n")
 
-print("Complete HDO Elastic Net coefficients with cutoff {cutoff} ready!")
+print(f"Complete HDO Elastic Net coefficients with cutoff {cutoff} ready!")

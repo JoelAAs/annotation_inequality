@@ -5,6 +5,7 @@ from collections import Counter
 
 cutoff = snakemake.wildcards.cutoff
 input_coefficients = snakemake.input.complete_elastic_net_coefficients
+obo_path = snakemake.input.ontology 
 output_top = snakemake.output.top_coefficients
 output_distribution = snakemake.output.coefficients_distribution
 
@@ -16,12 +17,15 @@ df = pd.read_csv(input_coefficients, sep = '\t')
 
 print("Data loaded!\n")
 
+print(f"Loading HDO Ontology from local file: {obo_path}")
+
+ontology = pronto.Ontology(obo_path)
+
+print("HDO ontology loaded!\n")
+
 print("Retrieving associations between DOIDs and HDO Terms...")
 
-do_url = "https://raw.githubusercontent.com/DiseaseOntology/HumanDiseaseOntology/main/src/ontology/doid.obo"
-ontology = pronto.Ontology(do_url)
 doid_to_name = {term.id: term.name for term in ontology.terms()}
-
 df['HDO_term'] = df['HDO_doid'].map(doid_to_name)
 
 # Handle 'No_doid' and missing values
@@ -70,6 +74,6 @@ plt.legend([f'Total coefficients = {total_coefs}'], loc='upper right')
 plt.savefig(output_distribution, dpi = 300)
 plt.close()
 
-print(f"Cutoff {cutoff}Coefficient distribution plotted!\n")
+print(f"Cutoff {cutoff} Coefficient distribution plotted!\n")
 
 print(f"Complete HDO coefficients with cutoff {cutoff} plotting done!")

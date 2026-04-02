@@ -7,52 +7,55 @@ depth = snakemake.wildcards.depth
 inputfile = snakemake.input.cutoff_file
 outputplot = snakemake.output.cutoff_losing_plot
 
-print(f"Plotting depth {depth} doids lost...")
+print(f"Plotting depth {depth} DOIDs remaining...")
 
+print("Loading data...")
 df = pd.read_csv(inputfile, sep=':')
 
-# Check if the df is empty
 if df.empty:
-    print(f"Depth {depth} cutoff file is empty. Creating an empty output file and exiting...")
     plt.figure()
-    plt.text(0.5, 0.5, 'No data available', ha = 'center')
+    plt.text(0.5, 0.5, f'No data available for Depth {depth}', ha='center')
     plt.savefig(outputplot)
-    print("Done. Exiting...")
-    sys.exit()
+    sys.exit(0)
 
-# Calculate the doids still left for each cutoff
-df['doids_left'] = 0.0
-mask = df['remaining_percentage']
+print(f"Data loaded for depth {depth}!\n")
 
-print("Calculating remaining DOIDs...")
+print(f"Computing depth {depth} metrics...")
 
+# 1. Calculate the 'lost' percentage
 df['removed_percentage'] = 100 - df['remaining_percentage']
 
-df['doids_left'] = (df['removed_doids'] * df['remaining_percentage']) / df['removed_percentage'].replace(0, np.nan)
+# 2. Reconstruct the total and remaining counts
+# Use a helper to avoid division by zero
+def calc_remaining(row):
+    if row['removed_percentage'] == 0:
+        # If 0% removed, we can't mathematically derive the total from 'removed_doids'
+        # But we know 100% remained. We'll handle this in the next step.
+        return np.nan
+    total = (row['removed_doids'] / row['removed_percentage']) * 100
+    return total - row['removed_doids']
+
+df['doids_left'] = df.apply(calc_remaining, axis=1)
+
+# 3. Handle cases where 0 DOIDs were removed (100% remained)
+# We find the total by looking at other rows where some WERE removed
+valid_totals = (df['removed_doids'] / df['removed_percentage'].replace(0, np.nan)) * 100
+total_doids_at_depth = int(round(valid_totals.median())) if not valid_totals.dropna().empty else 0
+
+# Fill in the 100% remaining cases
+df.loc[df['remaining_percentage'] == 100, 'doids_left'] = total_doids_at_depth
 df['doids_left'] = df['doids_left'].fillna(0).round().astype(int)
 
-# Final safety check, skipping plot if there are no lost DOIDs, in that case skipping the plot
-if df['doids_left'].sum() == 0 and df['removed_doids'].sum() == 0:
-    print("Data exists but contains no lost DOIDs. Skipping plot...")
+print(f"Depth {depth} metrics ready!\n")
 
-print("Remaining DOIDs computed!\n")
-
-print("Computing the total DOIDs...")
-
-total_calc_series = (df['removed_doids'] / df['removed_percentage'].replace(0, np.nan)) * 100
-total_doids = int(round(total_calc_series.dropna().median()))
-
-print("Total DOIDs computed!\n")
+print(f"Plotting depth {depth}...")
 
 plt.figure(figsize=(12, 7))
 
 plt.plot(df['cutoff'], df['doids_left'], 
          marker='o', linestyle='-', color='#2c3e50', 
          linewidth=2, markersize=8,
-         label=f'Initial DOIDs: {total_doids}'
-        )
-
-plt.xticks(df['cutoff'])
+         label=f'Derived Total DOIDs: {total_doids_at_depth}')
 
 for i, row in df.iterrows():
     plt.annotate(
@@ -60,22 +63,17 @@ for i, row in df.iterrows():
         (row['cutoff'], row['doids_left']),
         textcoords="offset points", 
         xytext=(0, 12), 
-        ha='center', 
-        fontsize=10,
-        fontweight='bold',
-        color='#e67e22'
-    )
+        ha='center', fontsize=9, fontweight='bold', color='#e67e22')
 
-plt.legend(loc='upper right', fontsize=12, frameon=True, shadow=True)
-
-plt.title(f'Number of DOIDs Remaining by Cutoff Frequency for depth {depth}', fontsize=15, pad=20)
-plt.xlabel('Cutoff (Minimum Gene Count)', fontsize=12, labelpad=10)
-plt.ylabel(f'Count of DOIDs in Feature Matrix depth {depth}', fontsize=12, labelpad=10)
+plt.xticks(df['cutoff'])
+plt.ylim(0, (df['doids_left'].max() * 1.2) + 10) 
 plt.grid(True, linestyle='--', alpha=0.6)
-
-plt.ylim(0, max(df['doids_left']) + 300)
+plt.title(f'DOIDs Remaining by Cutoff Frequency (Depth {depth})', fontsize=15)
+plt.xlabel('Cutoff (Minimum Gene Count per DOID)')
+plt.ylabel('Number of DOIDs in Matrix')
+plt.legend()
 
 plt.tight_layout()
 plt.savefig(outputplot)
 
-print(f"Depth {depth} Doids lost plot saved!")
+print(f"Depth {depth} doids lost per cutoff ready!\n")

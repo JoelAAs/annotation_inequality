@@ -92,3 +92,17 @@ rule plot_single_depth_HDO_doids_lost_with_each_cutoff:
         cutoff_losing_plot = "work_folder/data/ElasticNet/HDO_cutoff/plots/depth_{depth}_HDO_doids_lost.png"
     script:
         "plot_single_depth_HDO_doids_lost_with_each_cutoff.py"
+
+
+         '''
+        # --- SINGLE DEPTH SECTION ---
+        expand("work_folder/data/HDO/cutoff/feature_matrices/single_depth/depth_{depth}_feature_matrix_cutoff_{cutoff}.csv", 
+               depth=HDO_DEPTHS_WITH_ANCESTORS, cutoff=CUTOFFS),
+        expand("work_folder/data/ElasticNet/HDO_cutoff/EN_coefficients/single_depth/depth_{depth}_elastic_net_coefficients_cutoff_{cutoff}.csv", 
+               depth=HDO_DEPTHS_WITH_ANCESTORS, cutoff=CUTOFFS),
+        expand("work_folder/data/ElasticNet/HDO_cutoff/plots/Top/single_depth/depth_{depth}_top_coefficients_cutoff_{cutoff}.png", 
+               depth=HDO_DEPTHS_WITH_ANCESTORS, cutoff=CUTOFFS),
+        expand("work_folder/data/ElasticNet/HDO_cutoff/plots/Distribution/single_depth/depth_{depth}_coefficients_distribution_cutoff_{cutoff}.png", 
+               depth=HDO_DEPTHS_WITH_ANCESTORS, cutoff=CUTOFFS),
+        expand("work_folder/data/ElasticNet/HDO_cutoff/plots/doids_lost/depth_{depth}_HDO_doids_lost.png", 
+               depth=HDO_DEPTHS_WITH_ANCESTORS)'''
