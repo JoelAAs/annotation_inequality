@@ -29,6 +29,16 @@ rule create_HDO_dendrogram:
         all_coefficients = "work_folder/data/dendrograms/HDO/all_coefficients/all_coefficients_cutoff_{cutoff}.csv",
         ontology = "work_folder/data/HDO/doid.obo"
     output: 
-        dendrogram = "work_folder/data/dendrograms/HDO/visualization/dendrogram_cutoff_{cutoff}.png"
+        dendrogram = "work_folder/data/dendrograms/HDO/visualization/dendrogram/dendrogram_cutoff_{cutoff}.pdf"
     script: 
         "create_HDO_dendrogram.py"
+
+rule create_HDO_treemap:
+    input:
+        all_coefficients = "work_folder/data/dendrograms/HDO/all_coefficients/all_coefficients_cutoff_{cutoff}.csv",
+        ontology = "work_folder/data/HDO/doid.obo"
+    output: 
+        treemap = "work_folder/data/dendrograms/HDO/visualization/treemap/treemap_cutoff_{cutoff}.pdf",
+        treemap_html = "work_folder/data/dendrograms/HDO/visualization/treemap/treemap_cutoff_{cutoff}.html"
+    script: 
+        "create_HDO_treemap.py"

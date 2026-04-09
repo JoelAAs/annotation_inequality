@@ -1,5 +1,4 @@
 import pandas as pd
-import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import pronto
 import pydot
@@ -30,75 +29,78 @@ print("HDO ontology loaded!\n")
 #   Green -> high 
 # )
 
-colors = ["#ffb3b3", "#ffffff", "#b3ffb3"]
-custom_cmap = mcolors.LinearSegmentedColormap.from_list("LightRdGn", colors)
-norm = mcolors.Normalize(vmin=-1, vmax=1)
+colors = ["#d63031", "#ffffff", "#27ae60"]
+custom_cmap = mcolors.LinearSegmentedColormap.from_list("VibrantRdGn", colors)
+max_val = max(abs(coefficients['Coefficient'].min()), abs(coefficients['Coefficient'].max()), 0.01)
+norm = mcolors.Normalize(vmin=-max_val, vmax=max_val)
 
 dendrogram_style = {
-    'rankdir': 'TB',    
-    'splines': 'ortho', 
-    'nodesep': '0.8',   
-    'ranksep': '1.0',   
-    'fontname': 'Arial'
+    'rankdir': 'TB',
+    'splines': 'ortho',
+    'nodesep': '1.0',       
+    'ranksep': '1.5',    
+    'fontname': 'Arial',
+    'fontsize': '16',    
+    'dpi': '300'         
 }
 
 graph = pydot.Dot(graph_type='digraph', **dendrogram_style)
 
-def get_node_attributes(doid):
-    if doid not in coeff_map:
-        return {'fillcolor': '#f0f0f0', 'label': doid, 'style': 'filled'}
-    
-    val = coeff_map[doid]
-    color_hex = mcolors.to_hex(custom_cmap(norm(val)))
-    
-    # Get term name
-    name = hdo[doid].name if doid in hdo else "Unknown"
-    label = f"{doid}\n{name}\n({val:.4f})"
-    
-    return {
-        'fillcolor': color_hex, 
-        'label': label, 
-        'style': 'filled',
-        'shape': 'box',
-        'fontname': 'Helvetica'
-    }
+print(f"Building HDO cutoff {cutoff} Hierarchy...")
 
 nodes_to_plot = set()
 edges_to_plot = set()
 
-## TODO finish this
-
-print(f"Building HDO cutoff {cutoff} DAG lineage...")
-
 for doid in coeff_map.keys():
     if doid in hdo:
         nodes_to_plot.add(doid)
-        # Add lineage
+        # Trace the lineage to ensure everything is connected to the root
         for ancestor in hdo[doid].superclasses():
             nodes_to_plot.add(ancestor.id)
-            # Add relationships
+            # Find the immediate parent to draw the tree branch
             for parent in hdo[ancestor.id].superclasses(distance = 1):
-                edges_to_plot.add((parent.id, ancestor.id))
+                if parent.id != ancestor.id:
+                    edges_to_plot.add((parent.id, ancestor.id))
 
-print(f"HDO cutoff {cutoff} DAG lineage computed!\n")
+print(f"HDO cutoff {cutoff} Hierarchy computed!\n")
 
-print(f"Creating HDO cutoff {cutoff} visualization...")
+def clean_id(doid):
+    return doid.replace(':', '_')
+
+print(f"Adding HDO cutoff {cutoff} nodes to the graph...")
 
 for node_id in nodes_to_plot:
-    # Only plot if node is part of the DOID:4 (Disease) hierarchy to avoid floating nodes
-    attrs = get_node_attributes(node_id)
-    graph.add_node(pydot.Node(node_id, **attrs))
+    safe_id = clean_id(node_id)
+    val = coeff_map.get(node_id, 0)
+    color = mcolors.to_hex(custom_cmap(norm(val)))
+    name = hdo[node_id].name if node_id in hdo else node_id
+    label = f'"{node_id}\n{name}\n({val:.3f})"'
 
-for edge in edges_to_plot:
-    if edge[0] in nodes_to_plot and edge[1] in nodes_to_plot:
-        graph.add_edge(pydot.Edge(edge[0], edge[1]))
+    node = pydot.Node(
+        safe_id, 
+        label = label, 
+        fillcolor = color, 
+        style = 'filled', 
+        shape = 'box', 
+        fontsize = '14', 
+        margin = '0.2', 
+        width = '1.5'
+    )
+    graph.add_node(node)
 
-print(f"HDO cutoff {cutoff} visualization done!\n")
+print(f"HDO cutoff {cutoff} nodes added to the graph!\n")
 
-print(f"Saving HDO cutoff {cutoff} to png...")
+print(f"Adding HDO cutoff {cutoff} edges to the graph...")
 
-graph.write_png(outputimage)
+for parent_id, child_id in edges_to_plot:
+    graph.add_edge(pydot.Edge(clean_id(parent_id), clean_id(child_id)))
 
-print(f"HDO cutoff {cutoff} png saved!\n")
+print(f"HDO cutoff {cutoff} edges added to the graph!\n")
+
+print(f"Saving HDO cutoff {cutoff} to pdf...")
+
+graph.write_pdf(outputimage)
+
+print(f"HDO cutoff {cutoff} pdf saved!\n")
 
 print(f"HDO cutoff {cutoff} dendrogram ready!\n")

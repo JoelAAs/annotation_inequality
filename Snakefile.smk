@@ -90,6 +90,10 @@ rule all:
                depth=HDO_DEPTHS_WITH_ANCESTORS),
 
         # --- HDO DENDROGRAM OF COEFFICIENTS SECTION ---
-         expand("work_folder/data/dendrograms/HDO/all_coefficients/all_coefficients_cutoff_{cutoff}.csv",
+        expand("work_folder/data/dendrograms/HDO/all_coefficients/all_coefficients_cutoff_{cutoff}.csv",
+               cutoff = CUTOFFS),
+        expand("work_folder/data/dendrograms/HDO/visualization/dendrogram/dendrogram_cutoff_{cutoff}.pdf",
+               cutoff = CUTOFFS),
+        expand("work_folder/data/dendrograms/HDO/visualization/treemap/treemap_cutoff_{cutoff}.pdf",
                cutoff = CUTOFFS),
        
