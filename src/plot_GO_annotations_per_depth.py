@@ -12,13 +12,12 @@ df_textfile = pd.read_csv(input_textfile, sep = ':')
 x = df_textfile['depth']
 y = df_textfile['n_of_coefficients']
 
-plt.figure(figsize = (8, 6))
+plt.figure(figsize = (10, 6))
 plt.bar(x, y, color = 'skyblue', edgecolor = 'black')
 plt.yscale('log')
 plt.xlabel('Depth')
 plt.ylabel('Number of Coefficients (log-scale)')
 plt.title(f'Number of GO {aspect} Coefficients per Depth level')
-plt.xticks(x)
 plt.savefig(outputplot, dpi = 300)
 plt.close()
 

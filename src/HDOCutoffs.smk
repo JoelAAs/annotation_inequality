@@ -47,7 +47,6 @@ rule aggregate_complete_feature_matrices:
     output:
         touch("work_folder/data/HDO/cutoff/done_files/complete_matrices_done.txt")
 
-
 rule compute_complete_HDO_elastic_net_coefficients_with_cutoff:
     input: 
         wait = "work_folder/data/HDO/cutoff/done_files/complete_matrices_done.txt",

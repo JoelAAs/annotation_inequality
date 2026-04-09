@@ -1,5 +1,6 @@
 import pandas as pd
 
+aspect = snakemake.wildcards.aspect
 cutoff = int(snakemake.wildcards.cutoff)
 input_df = snakemake.input.complete_annotations
 cutoff_file = snakemake.output.cutoff_file
@@ -7,14 +8,14 @@ input_bait_usage = snakemake.input.bait_usage
 input_count_file = snakemake.input.count_df
 output_matrix = snakemake.output.complete_feature_matrix_with_cutoff
 
-print(f"Processing complete full feature matrix with cutoff {cutoff}...\n")
+print(f"Processing complete GO {aspect} feature matrix with cutoff {cutoff}...\n")
 
 print("Loading data...")
 
 df = pd.read_csv(input_df, sep = '\t')
 df_copy = df.copy()
 df_copy.fillna({
-    'doid': 'No_doid'
+    'go_id': 'No_go_id'
 }, inplace=True)
 
 bait_usage = pd.read_csv(input_bait_usage, sep = '\t')
@@ -35,30 +36,30 @@ common_genes = df_copy['entrez_id'].unique()
 
 print(f"{n_common_genes} common genes obtained!\n")
 
-print(f"Removing doids with gene count < {cutoff}...\n")
+print(f"Removing go ids with gene count < {cutoff}...\n")
 
-unique_doids_before = df_copy['doid'].nunique()
+unique_go_ids_before = df_copy['go_id'].nunique()
 
 print(f"unique genes before feature matrix = {df_copy['entrez_id'].nunique()}")
 
-print(f"valid doids = {df_copy['doid'].nunique()}")
+print(f"valid go ids = {df_copy['go_id'].nunique()}")
 
-valid_doids = count_df[count_df['gene_count'] >= cutoff]['doid'].unique()
-df_copy = df_copy[df_copy['doid'].isin(valid_doids)].copy()
+valid_go_ids = count_df[count_df['count'] >= cutoff]['go_id'].unique()
+df_copy = df_copy[df_copy['go_id'].isin(valid_go_ids)].copy()
 df_copy['value'] = 1
 
-unique_doids_after = df_copy['doid'].nunique()
+unique_go_ids_after = df_copy['go_id'].nunique()
 
-print(f"valid doids after cutoff = {unique_doids_after}\n")
+print(f"valid go ids after cutoff = {unique_go_ids_after}\n")
 
-print("Doids removed!\n")
+print(f"Go {aspect} ids removed!\n")
 
 # Removed doids
-removed_doids = unique_doids_before - unique_doids_after
+removed_go_ids = unique_go_ids_before - unique_go_ids_after
 
 # Calculating the remaining doid percentage
-if unique_doids_before > 0:
-    percentage_remaining = (unique_doids_after / unique_doids_before) * 100
+if unique_go_ids_before > 0:
+    percentage_remaining = (unique_go_ids_after / unique_go_ids_before) * 100
     percentage_remaining = round(percentage_remaining, 2)
 else:
     percentage_remaining = 0
@@ -67,7 +68,7 @@ print("Creating feature matrix...")
 
 df_onehot = df_copy.pivot_table(
     index = 'entrez_id',
-    columns = 'doid',
+    columns = 'go_id',
     values = 'value',
     fill_value = 0
 )
@@ -79,7 +80,7 @@ df_onehot = df_onehot.reset_index()
 
 print(f"unique genes after feature matrix and cutoff doid removal after reindexing = {df_onehot['entrez_id'].nunique()}")
 
-print(f"Unique doids in the feature matrix = {len(df_onehot.columns) - 1}")
+print(f"Unique go_ids in the feature matrix = {len(df_onehot.columns) - 1}")
 
 print("Feature_matrix ready!\n")
 
@@ -93,7 +94,7 @@ print(f"Creating cutoff {cutoff} file...")
 
 stats_data = {
     'cutoff': [cutoff],
-    'removed_doids': [removed_doids],
+    'removed_go_ids': [removed_go_ids],
     'remaining_percentage': [percentage_remaining]
 }
 
@@ -102,4 +103,4 @@ df_stats.to_csv(cutoff_file, sep = ':', index = False)
 
 print(f"Cutoff {cutoff} file created!\n")
 
-print(f"Complete full feature matrix with cutoff {cutoff} processed!")
+print(f"Complete GO {aspect} feature matrix with cutoff {cutoff} processed!")

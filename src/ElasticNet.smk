@@ -64,37 +64,102 @@ rule visualize_complete_HDO_coefficients_with_ancestors:
     script:
         "plot_complete_HDO_EN_coefficients_with_ancestors.py"
 
-def get_depths_for_aspect(aspect):
-    depth_file = f"work_folder/data/GO/{aspect}_min_aspect_depths.csv"
-    with open(depth_file) as f:
-        next(f) 
-        line = next(f)
-        _, min_depth = line.strip().split(":")
-        return [str(d) for d in range(int(min_depth) + 1)]
-
-rule fit_elastic_net_GO:
+rule compute_GO_complete_elastic_net_coefficients:
     input:
-        feature_matrix = lambda wc: f"work_folder/data/GO/feature_matrices/{wc.aspect}/feature_matrix_with_depth_{wc.depth}.csv",
+        feature_matrix = "work_folder/data/GO/feature_matrices/complete/{aspect}_complete_feature_matrix.csv",
         bait_usage = "work_folder/data/intact/bait_count.csv"
     output:
-        outputfile = "work_folder/data/ElasticNet/GO/EN_coefficients/{aspect}/elastic_net_coefficients_depth_{depth}.csv"
+        complete_elastic_net_coefficients = "work_folder/data/ElasticNet/GO/EN_coefficients/complete/{aspect}_complete_elastic_net_coefficients.csv"
     script:
-        "compute_GO_elastic_net_coefficients.py"
+        "compute_GO_complete_elastic_net_coefficients.py"
 
-rule visualize_GO_coefficients:
+rule visualize_complete_GO_coefficients:
     input: 
-        elastic_net_coefficients = lambda wc: f"work_folder/data/ElasticNet/GO/EN_coefficients/{wc.aspect}/elastic_net_coefficients_depth_{wc.depth}.csv"
-    output:
-        top_plot = "work_folder/data/ElasticNet/GO/plots/{aspect}/Top/top_coefficients_depth_{depth}.png", 
-        distribution_plot = "work_folder/data/ElasticNet/GO/plots/{aspect}/Distribution/coefficients_distribution_depth_{depth}.png"
-    script:
+        complete_elastic_net_coefficients = "work_folder/data/ElasticNet/GO/EN_coefficients/complete/{aspect}_complete_elastic_net_coefficients.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output: 
+        top_coefficients = "work_folder/data/ElasticNet/GO/plots/Top/complete/complete_{aspect}_top_coefficients.png",
+        coefficients_distribution = "work_folder/data/ElasticNet/GO/plots/Distribution/complete/complete_{aspect}_coefficients_distribution.png"
+    script: 
         "plot_GO_EN_coefficients.py"
 
-
-rule visualize_GO_annotations_per_depth:
+rule plot_go_annotations_per_depth:
     input: 
-        annotations_per_depth = lambda wc: f"work_folder/data/GO/annotations_per_depth_{wc.aspect}.csv"
+        annotations_per_depth = "work_folder/data/GO/annotations_per_depth_{aspect}.csv"
+    output: 
+        annotations_per_depth_plot =  "work_folder/data/ElasticNet/GO/plots/{aspect}_annotations_per_depth.png"
+    script: 
+        "plot_GO_annotations_per_depth.py"
+
+rule plot_go_genes_per_depth:
+    input: 
+        genes_per_depth = "work_folder/data/GO/genes_per_depth_{aspect}.csv"
+    output: 
+        genes_per_depth_plot =  "work_folder/data/ElasticNet/GO/plots/{aspect}_genes_per_depth.png"
+    script: 
+        "plot_go_genes_per_depth.py"
+
+def get_all_en_coefficients(wildcards):
+    depth_file = "work_folder/data/GO/max_depths_file.csv"
+    
+    if not os.path.exists(depth_file):
+        return []
+
+    df = pd.read_csv(depth_file, sep = ':')
+    
+    all_en_paths = []
+    
+    for _, row in df.iterrows():
+        asp = row['aspect']
+        max_d = int(row['max_depth'])
+        
+        for d in range(max_d + 1):
+            path = (
+                f"work_folder/data/ElasticNet/GO/EN_coefficients/single_depth/"
+                f"{asp}_depth_{d}_elastic_net_coefficients.csv"
+            )
+            all_en_paths.append(path)
+            
+    return all_en_paths
+
+rule compute_GO_single_depth_elastic_net_coefficients:
+    input:
+        feature_matrix = "work_folder/data/GO/feature_matrices/single_depth/{aspect}_depth_{depth}_feature_matrix.csv",
+        bait_usage = "work_folder/data/intact/bait_count.csv"
     output:
-        annotations_per_depth_plot = "work_folder/data/ElasticNet/GO/plots/{aspect}/annotations_per_depth.png" 
+        single_depth_elastic_net_coefficients = "work_folder/data/ElasticNet/GO/EN_coefficients/single_depth/{aspect}_depth_{depth}_elastic_net_coefficients.csv"
     script:
-        "plot_GO_annotations_per_depth.py" 
+        "compute_GO_single_depth_elastic_net_coefficients.py"
+
+def get_all_en_plots(wildcards):
+    depth_file = "work_folder/data/GO/max_depths_file.csv"
+    
+    if not os.path.exists(depth_file):
+        return []
+
+    df = pd.read_csv(depth_file, sep = ':')
+    all_plots = []
+    
+    for _, row in df.iterrows():
+        asp = row['aspect']
+        max_d = int(row['max_depth'])
+        
+        for d in range(max_d + 1):
+            all_plots.append(
+                f"work_folder/data/ElasticNet/GO/plots/Top/single_depth/{asp}_depth_{d}_top_coefficients.png"
+            )
+            all_plots.append(
+                f"work_folder/data/ElasticNet/GO/plots/Distribution/single_depth/{asp}_depth_{d}_coefficients_distribution.png"
+            )
+            
+    return all_plots
+
+rule visualize_single_depth_GO_coefficients:
+    input: 
+        single_depth_elastic_net_coefficients = "work_folder/data/ElasticNet/GO/EN_coefficients/single_depth/{aspect}_depth_{depth}_elastic_net_coefficients.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output: 
+        top_coefficients = "work_folder/data/ElasticNet/GO/plots/Top/single_depth/{aspect}_depth_{depth}_top_coefficients.png",
+        coefficients_distribution = "work_folder/data/ElasticNet/GO/plots/Distribution/single_depth/{aspect}_depth_{depth}_coefficients_distribution.png"
+    script: 
+        "plot_GO_single_depth_EN_coefficients.py"
