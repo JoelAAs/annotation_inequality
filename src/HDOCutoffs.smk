@@ -120,7 +120,8 @@ rule compute_single_depth_HDO_elastic_net_coefficients_with_cutoff:
         single_depth_feature_matrix_with_cutoff = "work_folder/data/HDO/cutoff/feature_matrices/single_depth/depth_{depth}_feature_matrix_cutoff_{cutoff}.csv",
         bait_usage = "work_folder/data/intact/bait_count.csv"
     output: 
-        single_depth_elastic_net_coefficients = "work_folder/data/ElasticNet/HDO_cutoff/EN_coefficients/single_depth/depth_{depth}_elastic_net_coefficients_cutoff_{cutoff}.csv"
+        single_depth_elastic_net_coefficients = "work_folder/data/ElasticNet/HDO_cutoff/EN_coefficients/single_depth/depth_{depth}_elastic_net_coefficients_cutoff_{cutoff}.csv",
+        adj_r2_file = "work_folder/data/HDO/cutoff/adj_r2_files/single_depth/depth_{depth}_cutoff_{cutoff}_adj_r2_file.csv"
     script: 
         "compute_single_depth_HDO_elastic_net_coefficients_with_cutoff.py"
 
@@ -129,6 +130,17 @@ rule aggregate_single_depth_elastic_net_coefficients:
         expand("work_folder/data/ElasticNet/HDO_cutoff/EN_coefficients/single_depth/depth_{depth}_elastic_net_coefficients_cutoff_{cutoff}.csv", depth = HDO_DEPTHS_WITH_ANCESTORS, cutoff = CUTOFFS)
     output:
         touch("work_folder/data/HDO/cutoff/done_files/single_depth_en_coefficients_done.txt")
+
+rule aggregate_single_depth_r2_files:
+    input:
+        lambda wc: expand("work_folder/data/HDO/cutoff/adj_r2_files/single_depth/depth_{depth}_cutoff_{cutoff}_adj_r2_file.csv", 
+                          cutoff=wc.cutoff, depth=HDO_DEPTHS_WITH_ANCESTORS)
+    output:
+        full_adj_r2_file = "work_folder/data/HDO/cutoff/adj_r2_files/full/cutoff_{cutoff}_adj_r2_file.csv"
+    run:
+        import pandas as pd
+        combined = pd.concat([pd.read_csv(f, sep=':') for f in input], ignore_index=True)
+        combined.sort_values('depth').to_csv(output.full_adj_r2_file, sep=':', index=False)
 
 rule visualize_single_depth_HDO_elastic_net_coefficients_with_cutoff:
     input: 

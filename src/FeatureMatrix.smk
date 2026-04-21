@@ -136,7 +136,7 @@ rule compute_GO_complete_feature_matrix:
     script:
         "compute_GO_complete_feature_matrix.py"
 
-rule compute_GO_max_depth:
+checkpoint compute_GO_max_depths:
     input:
         aspect_files = expand("work_folder/data/GO/{aspect}_all_annotations.csv", aspect=ASPECTS)
     output:
@@ -174,7 +174,7 @@ rule compute_GO_max_depth:
         summary_df.to_csv(output.max_depth_file, sep = ':', index=False)
 
 def get_all_single_depth_matrices(wildcards):
-    depth_file = "work_folder/data/GO/max_depths_file.csv"
+    depth_file = checkpoints.compute_GO_max_depths.get(**wildcards).output[0]
     
     # Safety check: if the file isn't there yet (e.g., first dry-run)
     if not os.path.exists(depth_file):

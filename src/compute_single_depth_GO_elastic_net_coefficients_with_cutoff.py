@@ -10,6 +10,7 @@ depth = snakemake.wildcards.depth
 input_matrix = snakemake.input.single_depth_feature_matrix_with_cutoff
 input_df_bait_usage = snakemake.input.bait_usage
 output_coefficients = snakemake.output.single_depth_elastic_net_coefficients
+output_r2 = snakemake.output.adj_r2_file
 
 print(f"Processing depth {depth} GO {aspect} Elastic Net coefficients with cutoff {cutoff}...\n")
 
@@ -41,6 +42,8 @@ if X_raw.shape[1] == 0:
     print(f"No features available for {aspect} Depth {depth}, Cutoff {cutoff}. Skipping...")
     # Create an empty DataFrame with the expected columns so Snakemake doesn't fail
     pd.DataFrame(columns=['GO_id', 'Coefficient']).to_csv(output_coefficients, sep = '\t', index=False)
+    # Create another empty DataFrame for the r2 file so Snakemake doesn't crash
+    pd.DataFrame({'depth': [depth], 'adjusted_r2': [0.0]}).to_csv(output_r2, sep = ':', index = False)
     sys.exit(0) 
 
 X = X_raw.values
@@ -71,10 +74,25 @@ coef_df = pd.DataFrame({
 
 print(f"{aspect} depth {depth} cutoff {cutoff} Coefficients obtained\n")
 
-print("Saving coefficients to csv...")
+print(f"Computing adjusted R^2 for GO {aspect} depth {depth}, cutoff {cutoff}...")
+
+r2 = model.score(X_scaled, y)
+n = X_scaled.shape[0]
+p = np.count_nonzero(model.coef_)
+
+adj_r2 = 1 - (1 - r2) * (n - 1) / (n - p - 1)
+
+print(f"Adjusted R^2 value for GO {aspect} depth {depth}, cutoff {cutoff} computed!\n")
+
+print("Saving coefficients and adjusted R^2 to csv...")
 
 coef_df.to_csv(output_coefficients, sep = '\t', index = False)
+r2_df = pd.DataFrame({
+    'depth': [depth],
+    'adjusted_r2': [adj_r2]
+})
+r2_df.to_csv(output_r2, sep = ':', index = False)
 
-print("Coefficients saved!\n")
+print("Coefficients and R^2 saved!\n")
 
 print(f"Depth {depth} GO {aspect} Elastic Net coefficients with cutoff {cutoff} ready!")

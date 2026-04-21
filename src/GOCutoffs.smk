@@ -97,7 +97,7 @@ rule compute_single_depth_GO_feature_matrix_with_cutoff:
         "compute_single_depth_GO_feature_matrix_with_cutoff.py"
 
 def get_all_GO_depth_cutoff_paths(wildcards):
-    depth_file = "work_folder/data/GO/max_depths_file.csv"
+    depth_file = checkpoints.compute_GO_max_depths.get(**wildcards).output[0]
     
     # Safety check for dry-runs
     if not os.path.exists(depth_file):
@@ -123,7 +123,7 @@ def get_all_GO_depth_cutoff_paths(wildcards):
     return all_paths
 
 def get_all_GO_depth_summary_files(wildcards):
-    depth_file = "work_folder/data/GO/max_depths_file.csv"
+    depth_file = checkpoints.compute_GO_max_depths.get(**wildcards).output[0]
     if not os.path.exists(depth_file):
         return []
 
@@ -166,12 +166,15 @@ rule compute_single_depth_GO_elastic_net_coefficients_with_cutoff:
         single_depth_feature_matrix_with_cutoff = "work_folder/data/GO/cutoff/feature_matrices/single_depth/{aspect}_feature_matrix_depth_{depth}_cutoff_{cutoff}.csv",
         bait_usage = "work_folder/data/intact/bait_count.csv"
     output: 
-        single_depth_elastic_net_coefficients = "work_folder/data/ElasticNet/GO_cutoff/EN_coefficients/single_depth/{aspect}_depth_{depth}_elastic_net_coefficients_cutoff_{cutoff}.csv"
+        single_depth_elastic_net_coefficients = "work_folder/data/ElasticNet/GO_cutoff/EN_coefficients/single_depth/{aspect}_depth_{depth}_elastic_net_coefficients_cutoff_{cutoff}.csv",
+        adj_r2_file = "work_folder/data/GO/cutoff/adj_r2_files/single_depth/{aspect}_depth_{depth}_cutoff_{cutoff}_adj_r2_file.csv"
     script: 
         "compute_single_depth_GO_elastic_net_coefficients_with_cutoff.py"
 
+## TODO function to get all adj_r2_file based on aspect, also create function to aggregate them into one for each aspect-cutoff with all depths for that cutoff then plots as for HDO
+
 def get_all_GO_single_depth_en_coefficients(wildcards):
-    depth_file = "work_folder/data/GO/max_depths_file.csv"
+    depth_file = checkpoints.compute_GO_max_depths.get(**wildcards).output[0]
     
     # Safety check for dry-runs
     if not os.path.exists(depth_file):
@@ -200,6 +203,57 @@ rule aggregate_single_depth_GO_elastic_net_coefficients:
     output:
         touch("work_folder/data/GO/cutoff/done_files/single_depth_en_coefficients_done.txt")
 
+def get_all_GO_single_depth_adj_r2_files(wildcards):
+    depth_file = checkpoints.compute_GO_max_depths.get(**wildcards).output[0]
+    
+    if not os.path.exists(depth_file):
+        return []
+
+    df = pd.read_csv(depth_file, sep=':')
+    all_paths = []
+    
+    for _, row in df.iterrows():
+        asp = row['aspect']
+        max_d = int(row['max_depth'])
+        for c in CUTOFFS:
+            # This targets the final aggregated files for each aspect/cutoff
+            path = f"work_folder/data/GO/cutoff/adj_r2_files/full/{asp}_cutoff_{c}_all_depths_adj_r2.csv"
+            all_paths.append(path)
+                
+    return all_paths
+
+def get_depth_files_for_aggregation(wildcards):
+    """Filters the adj_r2 files for a specific aspect and cutoff across all depths."""
+    depth_file = checkpoints.compute_GO_max_depths.get(**wildcards).output[0]
+    if not os.path.exists(depth_file): return []
+    
+    df = pd.read_csv(depth_file, sep=':')
+    # Get max depth for the current aspect in wildcards
+    max_d = int(df.loc[df['aspect'] == wildcards.aspect, 'max_depth'].values[0])
+    
+    return [
+        f"work_folder/data/GO/cutoff/adj_r2_files/single_depth/{wildcards.aspect}_depth_{d}_cutoff_{wildcards.cutoff}_adj_r2_file.csv"
+        for d in range(max_d + 1)
+    ]
+
+rule aggregate_GO_adj_r2_by_aspect_cutoff:
+    input:
+        files = get_depth_files_for_aggregation
+    output:
+        combined = "work_folder/data/GO/cutoff/adj_r2_files/full/{aspect}_cutoff_{cutoff}_all_depths_adj_r2.csv"
+    run:
+        import pandas as pd        
+        # Load all depth-specific files
+        # Using a list comprehension is efficient here
+        df_list = [pd.read_csv(f) for f in input.files]        
+        # Combine and sort by 'depth' so the resulting file is organized
+        combined_df = pd.concat(df_list, ignore_index=True)        
+        # Assuming your CSV has a column named 'depth'
+        if 'depth' in combined_df.columns:
+            combined_df = combined_df.sort_values('depth')            
+        combined_df.to_csv(output.combined, index=False)
+
+
 rule visualize_single_depth_GO_elastic_net_coefficients_with_cutoff:
     input: 
         wait = "work_folder/data/GO/cutoff/done_files/single_depth_en_coefficients_done.txt",
@@ -212,7 +266,7 @@ rule visualize_single_depth_GO_elastic_net_coefficients_with_cutoff:
         "plot_single_depth_GO_EN_coefficients_with_cutoff.py" 
 
 def get_all_GO_single_depth_en_plots(wildcards):
-    depth_file = "work_folder/data/GO/max_depths_file.csv"
+    depth_file = checkpoints.compute_GO_max_depths.get(**wildcards).output[0]
     
     # Safety check for dry-runs
     if not os.path.exists(depth_file):
@@ -249,7 +303,7 @@ rule plot_single_depth_GO_ids_lost_with_each_cutoff:
         "plot_single_depth_GO_ids_lost_with_each_cutoff.py"
 
 def get_all_GO_lost_ids_plots(wildcards):
-    depth_file = "work_folder/data/GO/max_depths_file.csv"
+    depth_file = checkpoints.compute_GO_max_depths.get(**wildcards).output[0]
     if not os.path.exists(depth_file):
         return []
 

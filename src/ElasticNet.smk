@@ -100,7 +100,7 @@ rule plot_go_genes_per_depth:
         "plot_go_genes_per_depth.py"
 
 def get_all_en_coefficients(wildcards):
-    depth_file = "work_folder/data/GO/max_depths_file.csv"
+    depth_file = checkpoints.compute_GO_max_depths.get(**wildcards).output[0]
     
     if not os.path.exists(depth_file):
         return []
@@ -132,7 +132,7 @@ rule compute_GO_single_depth_elastic_net_coefficients:
         "compute_GO_single_depth_elastic_net_coefficients.py"
 
 def get_all_en_plots(wildcards):
-    depth_file = "work_folder/data/GO/max_depths_file.csv"
+    depth_file = checkpoints.compute_GO_max_depths.get(**wildcards).output[0]
     
     if not os.path.exists(depth_file):
         return []
