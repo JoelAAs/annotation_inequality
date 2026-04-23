@@ -24,15 +24,22 @@ baits = n_of_baits.iloc[0]['n_of_baits']
 colors = ['#4D7902', '#F9A602']
 custom_cmap = LinearSegmentedColormap.from_list('green_orange', colors)
 
-plt.figure(figsize = (10, 6))
-sns.heatmap(corr_df.iloc[::-1],
-            annot = True,
-            cmap = custom_cmap,
-            square = True,
-            fmt = '.2g')
+plt.figure(figsize = (12, 10))
+plot = sns.heatmap(
+    corr_df.iloc[::-1],
+    annot = True,
+    cmap = custom_cmap,
+    square = True,
+    fmt = '.2f',
+    annot_kws={"size": 16, "weight": "bold"}, 
+    cbar_kws={'label': f'{method} Correlation Coefficient', 'shrink': 0.8, 'aspect': 20}
+)
 
-plt.xticks(rotation = 0)
-plt.yticks(rotation = 0)
-plt.title(f'{method} Correlation Matrix | N = {baits} Baits')
+plt.xticks(rotation = 0, fontsize = 16)
+plt.yticks(rotation = 0, fontsize = 16)
+plt.title(f'{method} Correlation Matrix | N = {baits} Baits', fontsize = 26, fontweight='bold', pad = 25)
+cbar = plot.collections[0].colorbar
+cbar.ax.tick_params(labelsize=16)
+cbar.set_label(f'{method} Correlation Value', fontsize=18, labelpad=15)
 plt.tight_layout()
-plt.savefig(outputfile, dpi = 300)
+plt.savefig(outputfile, dpi = 300, bbox_inches = 'tight')

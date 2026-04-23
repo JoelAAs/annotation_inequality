@@ -43,11 +43,11 @@ print(f"GO {aspect} Depth {depth} metrics ready!\n")
 
 print(f"Plotting GO {aspect} depth {depth}...")
 
-plt.figure(figsize=(12, 7))
+plt.figure(figsize=(14, 8))
 
 plt.plot(df['cutoff'], df['go_ids_left'], 
          marker='o', linestyle='-', color='#2c3e50', 
-         linewidth=2, markersize=8,
+         linewidth=4, markersize=13,
          label=f'Derived Total GO ids: {total_goids_at_depth}')
 
 for i, row in df.iterrows():
@@ -55,18 +55,20 @@ for i, row in df.iterrows():
         f"{row['remaining_percentage']}%", 
         (row['cutoff'], row['go_ids_left']),
         textcoords="offset points", 
-        xytext=(0, 12), 
-        ha='center', fontsize=9, fontweight='bold', color='#e67e22')
+        xytext=(8, 8), 
+        rotation=45, ha='left', va='bottom', fontsize=18, fontweight='bold', color='#e67e22')
 
-plt.xticks(df['cutoff'])
+plt.xticks(df['cutoff'], fontsize = 20)
+plt.yticks(fontsize = 20)
 plt.ylim(0, (df['go_ids_left'].max() * 1.2) + 10) 
-plt.grid(True, linestyle='--', alpha=0.6)
-plt.title(f'GO ids Remaining by Cutoff Frequency (Depth {depth})', fontsize=15)
-plt.xlabel('Cutoff (Minimum Gene Count per GO id)')
-plt.ylabel('Number of GO ids in Matrix')
-plt.legend()
+plt.grid(True, linestyle='--', alpha=0.8)
+plt.margins(x=0.1)
+plt.title(f'GO {aspect} ids Remaining by Cutoff Frequency (Depth {depth})', fontsize=26, fontweight='bold', pad=25)
+plt.xlabel('Cutoff (Minimum Gene Count per GO id)', fontsize=22, labelpad=20)
+plt.ylabel('Number of GO ids in Matrix', fontsize=22, labelpad=20)
+plt.legend(fontsize=20)
 
 plt.tight_layout()
-plt.savefig(outputplot)
+plt.savefig(outputplot, dpi=300, bbox_inches='tight')
 
 print(f"GO {aspect} Depth {depth} GO ids lost per cutoff ready!\n")

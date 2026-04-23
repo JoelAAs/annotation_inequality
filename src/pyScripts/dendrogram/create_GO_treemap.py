@@ -84,12 +84,39 @@ if not plot_df.empty:
         title=f"Full {aspect_name} Landscape | Area = Depth (Root=Large) | Cutoff = {cutoff} | N = {len(plot_df)}"
     )
     
-    # Ultra-high resolution for 'All Coefficients' mode
     fig.update_layout(
         width=3000, 
         height=2000, 
-        margin=dict(t=100, l=20, r=20, b=20),
-        font=dict(size=14)
+        margin=dict(t=250, l=40, r=150, b=40), 
+        
+        
+        title=dict(
+            text=f"Full {aspect_name} Landscape | Area = Depth (Root=Large) | Cutoff = {cutoff} | N = {len(plot_df)}",
+            x=0.5,
+            y=0.95,
+            xanchor='center',
+            yanchor='top',
+            font=dict(size=80, color='black', family="Arial, sans-serif")
+        ),
+
+        
+        coloraxis_colorbar=dict(
+            title="<b>Coefficient Value</b>",
+            title_font=dict(size=50), 
+            tickfont=dict(size=40),  
+            thicknessmode="pixels", 
+            thickness=120,            
+            lenmode="fraction", 
+            len=0.7,
+            yanchor="middle",
+            y=0.5,
+            x=1.02,                  
+            ticks="outside",
+            ticklen=15                  
+        ),
+
+        
+        font=dict(size=30) 
     )
     
     # Hide text in very small boxes to keep PDF from becoming a 'black blob'

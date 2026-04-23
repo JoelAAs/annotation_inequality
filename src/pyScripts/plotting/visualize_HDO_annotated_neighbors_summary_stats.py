@@ -56,28 +56,33 @@ plt.close()
 
 print(f"Plotting HDO top coefficients annotated neighbors depth {depth} cutoff {cutoff} fold change plot...")
 
-plt.figure(figsize=(12, 6))
+plt.figure(figsize=(16, 8))
 sns.set_style("whitegrid")
 
 stats = stats.sort_values('Fold_enrichment', ascending = False)
 
-ax = sns.barplot(data = stats, x = 'HDO_annotation', y = 'Fold_enrichment', palette='viridis')
+ax = sns.barplot(data = stats, x = 'HDO_annotation', y = 'Fold_enrichment', palette='viridis', edgecolor='0.2', linewidth=2)
+
+max_y = stats['Fold_enrichment'].max()
+ax.set_ylim(0, max_y * 1.3)
 
 # Add a dashed line at 1.0 (null hypothesis)
 plt.axhline(1.0, color = 'red', linestyle = '--', alpha = 0.6)
 
 # Annotate with p-values
 for i, p in enumerate(stats['Wilcoxon_p_value']):
-    ax.text(i, stats['Fold_enrichment'].iloc[i] + 0.01, f"p = {p:.1e}", 
-            ha = 'center', fontweight = 'bold', color = 'black')
+    ax.text(i, stats['Fold_enrichment'].iloc[i] + (max_y * 0.03), f"p = {p:.1e}", 
+            ha = 'center', va='bottom', fontweight = 'bold', color = 'black', fontsize = 18)
 
-plt.title("Fold Enrichment of HDO Top Coefficients Annotated Neighbors (Observed vs Baseline)")
-plt.ylabel("Fold Enrichment ($Obs/Base$)")
-plt.xlabel("HDO Annotation")
+plt.title("Fold Enrichment of HDO Top Coefficients Annotated Neighbors (Observed vs Baseline)", fontsize=26, fontweight='bold', pad=25)
+plt.ylabel("Fold Enrichment ($Obs/Base$)", fontsize=22, labelpad=20)
+plt.xlabel("HDO Annotation", fontsize=22, labelpad=20)
+plt.xticks(fontsize = 20, fontweight = 'medium')
+plt.yticks(fontsize = 20, fontweight = 'medium')
 plt.tight_layout()
 
 print(f"Saving fold change plot for HDO top coefficients annotated neighbors depth {depth} cutoff {cutoff}...")
 
-plt.savefig(outputplot)
+plt.savefig(outputplot, dpi=300, bbox_inches='tight')
 
 print(f"Stats plots for HDO top coefficients annotated neighbors depth {depth} cutoff {cutoff} ready!")

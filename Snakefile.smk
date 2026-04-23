@@ -16,6 +16,7 @@ include: "src/CoefficientsPlotting.smk"
 include: "src/smkFiles/RawNetwork.smk"
 include: "src/smkFiles/HDONetwork.smk"
 include: "src/smkFiles/GONetwork.smk"
+include: "src/smkFiles/GOAnnotationDates.smk"
 
 ASPECTS = ["BP", "CC", "MF"]
 
@@ -200,3 +201,6 @@ rule all:
                aspect = ASPECTS),
         expand("work_folder/data/network/GO/plots/comparison/top_coefficients/top_{aspect}_coefficients_annotated_neighbors_comparison_depth_5_cutoff_20.png",
                aspect = ASPECTS),
+
+        # --- GO ANNOTATIONS DATES SECTION ---
+        "work_folder/data/dates/GO/downloads_complete.txt",

@@ -24,24 +24,26 @@ max_degree = df_distrib['degree'].max()
 x = df_distrib['degree']
 y = df_distrib['frequency']
 
-plt.figure(figsize = (10,6))
-plt.bar(x, y, color = 'skyblue', edgecolor = 'black', zorder = 0, label = total_nodes)
+plt.figure(figsize = (14, 7))
+plt.bar(x, y, color = 'skyblue', edgecolor = 'black', zorder = 0, label = total_nodes, width = 0.8, linewidth = 0.5)
 plt.xscale('log')
 plt.yscale('log')
 plt.xlim(0, max_degree * 1.1)
 plt.ylim(0, max_frequency * 1.1)
-plt.xlabel('Degree (log-scale)')
-plt.ylabel('Frequency (log-scale)')
-plt.title("Bait-Prey Publications Network's Node Degree Distribution")
+plt.xlabel('Degree (log-scale)', fontsize = 22, labelpad = 20)
+plt.ylabel('Number of Nodes (log-scale)', fontsize = 22, labelpad = 20)
+plt.title("Bait-Prey Publications Network's Node Degree Distribution", fontsize = 26, fontweight = 'bold', pad = 30)
+plt.xticks(fontsize = 20)
+plt.yticks(fontsize = 20)
 plt.grid(True, linestyle='--', alpha=0.6)
-plt.legend(loc = 'upper right', frameon = False, fontsize = 'small', title = 'Total nodes')
+plt.legend(fontsize = 22, loc = 'upper right', frameon = False, title = 'Total nodes', title_fontsize=20, handletextpad=1.3)
 plt.tight_layout()
 
 print(f"Raw network degree frequencies plotting done!\n")
 
 print(f"Saving raw network degree frequencies plot...")
 
-plt.savefig(outputplot)
+plt.savefig(outputplot, dpi = 300, bbox_inches = 'tight')
 plt.close()
 
 print(f"Raw network degree frequencies plot saved!\n")

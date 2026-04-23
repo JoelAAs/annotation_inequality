@@ -50,11 +50,11 @@ print(f"Depth {depth} metrics ready!\n")
 
 print(f"Plotting depth {depth}...")
 
-plt.figure(figsize=(12, 7))
+plt.figure(figsize=(14, 8))
 
 plt.plot(df['cutoff'], df['doids_left'], 
          marker='o', linestyle='-', color='#2c3e50', 
-         linewidth=2, markersize=8,
+         linewidth=4, markersize=13,
          label=f'Derived Total DOIDs: {total_doids_at_depth}')
 
 for i, row in df.iterrows():
@@ -62,18 +62,20 @@ for i, row in df.iterrows():
         f"{row['remaining_percentage']}%", 
         (row['cutoff'], row['doids_left']),
         textcoords="offset points", 
-        xytext=(0, 12), 
-        ha='center', fontsize=9, fontweight='bold', color='#e67e22')
+        xytext=(8, 8), 
+        rotation=45, ha='left', va='bottom', fontsize=18, fontweight='bold', color='#e67e22')
 
-plt.xticks(df['cutoff'])
+plt.xticks(df['cutoff'], fontsize = 20)
+plt.yticks(fontsize=20)
 plt.ylim(0, (df['doids_left'].max() * 1.2) + 10) 
-plt.grid(True, linestyle='--', alpha=0.6)
-plt.title(f'DOIDs Remaining by Cutoff Frequency (Depth {depth})', fontsize=15)
-plt.xlabel('Cutoff (Minimum Gene Count per DOID)')
-plt.ylabel('Number of DOIDs in Matrix')
-plt.legend()
+plt.grid(True, linestyle='--', alpha=0.8)
+plt.margins(x=0.1)
+plt.title(f'DOIDs Remaining by Cutoff Frequency (Depth {depth})', fontsize=26, fontweight='bold', pad=25)
+plt.xlabel('Cutoff (Minimum Gene Count per DOID)', fontsize=22, labelpad=20)
+plt.ylabel('Number of DOIDs in Matrix', fontsize=22, labelpad=20)
+plt.legend(fontsize=20)
 
 plt.tight_layout()
-plt.savefig(outputplot)
+plt.savefig(outputplot, dpi=300, bbox_inches='tight')
 
 print(f"Depth {depth} doids lost per cutoff ready!\n")

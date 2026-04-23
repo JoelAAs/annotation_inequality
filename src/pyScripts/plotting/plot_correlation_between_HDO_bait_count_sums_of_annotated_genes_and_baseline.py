@@ -79,21 +79,27 @@ sns.barplot(data = plot_bar_df,
             y = 'Mean',
             hue = 'Group',
             palette = 'Set2',
-            ax = ax1)
+            ax = ax1,
+            edgecolor='0.3',
+            width = 0.7,
+            zorder = 3
+)
 
 max_val = stats['Observed_mean'].max()
-ax1.set_ylim(0, max_val * 1.25)
+ax1.set_ylim(0, max_val * 1.4)
+ax1.yaxis.grid(True, linestyle='--', which='major', color='grey', alpha=0.3)
 
 for i, row in stats.iterrows():
     p = row['Wilcoxon_p_value']
     stars = "****" if p < 0.0001 else "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else "ns"
     p_text = f"{stars}\n(p = {p:.1e})"
     h = max(row['Observed_mean'], row['Baseline_mean'])
-    ax1.text(i, h + (max_val * 0.02), p_text, ha = 'center', va = 'bottom', fontsize = 10, fontweight = 'bold')
+    ax1.text(i, h + (max_val * 0.02), p_text, ha = 'center', va = 'bottom', fontsize = 16, fontweight = 'bold')
 
-ax1.set_title(f"A. Mean HDO Neighbor Bait Counts (Paired Wilcoxon)", loc = 'left', fontweight = 'bold')
-ax1.set_ylabel("Mean Sum")
-ax1.legend(title = "Group")
+ax1.set_title(f"A. Mean HDO Neighbor Bait Counts (Paired Wilcoxon)", loc = 'left', fontweight = 'bold', fontsize = 26, pad = 25)
+ax1.set_ylabel("Mean Sum", fontsize = 22, labelpad= 20)
+ax1.tick_params(axis='y', labelsize=18)
+ax1.legend(title = "Group", title_fontsize=20, fontsize=18, loc='upper right')
 
 sns.violinplot(data = dist_df,
                x = 'HDO_term',
@@ -102,19 +108,30 @@ sns.violinplot(data = dist_df,
                split = True,
                inner = 'quart',
                palette = 'Set2',
-               ax = ax2)
+               ax = ax2,
+               linewidth=2
+)
 
 ax2.set_yscale('log')
-ax2.set_title(f"B. Distribution of HDO Neighbor Sums (Log Scale)", loc = 'left', fontweight='bold')
-ax2.set_ylabel("Neighbors Bait Count Sum (log - scale)")
-ax2.set_xlabel("HDO Annotation")
-ax2.set_xticklabels([format_name(t.get_text()) for t in ax2.get_xticklabels()])
-ax2.legend(title = "Group")
+ax2.set_title(f"B. Distribution of HDO Neighbor Sums (Log Scale)", loc = 'left', fontweight='bold', fontsize = 26, pad = 25)
+ax2.set_ylabel("Neighbors Bait Count Sum (log scale)", fontsize = 22, labelpad = 20)
+ax2.set_xlabel("HDO Annotation", fontsize = 22, labelpad = 20)
+ax2.set_xticklabels(
+    [format_name(t.get_text()) for t in ax2.get_xticklabels()],
+    rotation=45, 
+    ha='right',          
+    rotation_mode='anchor', 
+    fontsize=18, 
+    fontweight='medium'
+)
+ax2.tick_params(axis='y', labelsize=18)
+ax2.legend(title = "Group", title_fontsize=20, fontsize=18, loc='upper right')
 
 plt.tight_layout()
 
 print(f"Saving Top HDO coefficients depth {depth} cutoff {cutoff} correlation with baseline plots...")
 
-plt.savefig(outputplots, dpi = 300)
+plt.subplots_adjust(bottom=0.2, hspace=0.3)
+plt.savefig(outputplots, dpi = 300, bbox_inches='tight')
 
 print(f"Top HDO coefficients depth {depth} cutoff {cutoff} correlation with baseline plotting done!")
