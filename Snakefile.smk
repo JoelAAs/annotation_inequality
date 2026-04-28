@@ -22,6 +22,10 @@ ASPECTS = ["BP", "CC", "MF"]
 
 rule all:
     input:
+        # --- INTACT SECTION ---
+        "work_folder/data/intact/bait_prey_publications_no_gene_complete_dates.pq",
+        "work_folder/data/intact/bait_prey_publications_complete_dates.pq",
+
         # --- ANNOTATIONS VS GENE COUNTS ---
         expand("work_folder/data/plots/GO_plots/{aspect}_annotations_vs_gene_counts_distrib.png",
                aspect = ASPECTS),
@@ -127,6 +131,8 @@ rule all:
          "work_folder/data/network/raw_networks/raw_network_degree_frequencies.csv",
          "work_folder/data/network/raw_networks/bait_prey_publications_network.pkl",
          "work_folder/data/network/raw_networks/raw_network_degree_frequencies.png",
+         "work_folder/data/network/raw_networks/network_genes.txt",
+         "work_folder/data/network/raw_networks/network_genes_translated.txt",
 
         # --- HDO ANNOTATIONS NETWORK SECTION ---
          "work_folder/data/network/HDO/HDO_bait_prey_publications_network.pkl",
@@ -204,3 +210,23 @@ rule all:
 
         # --- GO ANNOTATIONS DATES SECTION ---
         "work_folder/data/dates/GO/downloads_complete.txt",
+        get_all_parsed_snapshots,
+        "work_folder/data/dates/GO/GO_first_annotation_dates.csv",
+        expand("work_folder/data/dates/GO/networks_with_dates/{aspect}_network_with_dates.pkl",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/networks_with_dates/{aspect}_network_with_dates_complete.pkl",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/networks_with_dates/{aspect}_final_network.pkl",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_5_cutoff_20.csv",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_5_cutoff_20.pkl",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/network_statistics/{aspect}_depth_5_cutoff_20_networks_statistics.csv",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/plots/{aspect}_depth_5_cutoff_20_total_plots.png",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/plots/{aspect}_depth_5_cutoff_20_annotated_plots.png",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/correlation/{aspect}_depth_5_cutoff_20_temporal_correlation_results.csv",
+               aspect = ASPECTS),
