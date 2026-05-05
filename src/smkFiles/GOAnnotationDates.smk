@@ -179,7 +179,89 @@ rule visualize_past_present_and_future_GO_networks_statistics:
     script:
         "../pyScripts/plotting/visualize_past_present_and_future_GO_networks_statistics.py"
 
-## TODO refine
+rule visualize_GO_fractions_of_annotated_genes_during_the_years:
+    input:
+        networks_statistics = "work_folder/data/dates/GO/network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_networks_statistics.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/{aspect}_depth_{depth}_cutoff_{cutoff}_fractions_plot.png",
+        fractions_plot_general = "work_folder/data/dates/GO/plots/{aspect}_depth_{depth}_cutoff_{cutoff}_fractions_plot_general.png"
+    script:
+        "../pyScripts/plotting/visualize_GO_fractions_of_annotated_genes_during_the_years.py"
+
+rule compare_edges_evolution_in_GO_networks_time_traveler:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/{aspect}_final_network.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_time_traveler.csv"
+    script:
+        "../pyScripts/dates/GO/compare_edge_evolution_in_GO_networks_time_traveler.py"
+
+rule visualize_edges_evolution_in_GO_networks_time_traveler:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_time_traveler.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/edges_evolution/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_time_traveler.png"
+    script:
+        "../pyScripts/plotting/visualize_edges_evolution_in_GO_networks_time_traveler.py"
+
+rule compare_edges_evolution_in_GO_networks_time_traveler_one_year_span:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/{aspect}_final_network.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_time_traveler_one_year_span.csv"
+    script:
+        "../pyScripts/dates/GO/compare_edge_evolution_in_GO_networks_time_traveler_one_year_span.py"
+
+rule visualize_edges_evolution_in_GO_networks_time_traveler_one_year_span:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_time_traveler_one_year_span.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/edges_evolution/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_time_traveler_one_year_span.png"
+    script:
+        "../pyScripts/plotting/visualize_edges_evolution_in_GO_networks_time_traveler_one_year_span.py"
+
+rule compare_edges_evolution_in_GO_networks:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/{aspect}_final_network.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics.csv"
+    script:
+        "../pyScripts/dates/GO/compare_edge_evolution_in_GO_networks.py"
+
+rule visualize_edges_evolution_in_GO_networks:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/edges_evolution/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot.png"
+    script:
+        "../pyScripts/plotting/visualize_edges_evolution_in_GO_networks.py"
+
+rule compare_edges_evolution_in_GO_networks_one_year_span:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/{aspect}_final_network.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_one_year_span.csv"
+    script:
+        "../pyScripts/dates/GO/compare_edge_evolution_in_GO_networks_one_year_span.py"
+
+rule visualize_edges_evolution_in_GO_networks_one_year_span:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_one_year_span.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/edges_evolution/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_one_year_span.png"
+    script:
+        "../pyScripts/plotting/visualize_edges_evolution_in_GO_networks_one_year_span.py"
+
+## This section will be done after probably
 rule calculate_GO_temporal_correlation:
     input:
         networks_statistics = "work_folder/data/dates/GO/network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_networks_statistics.csv",
@@ -194,6 +276,6 @@ rule visualize_GO_temporal_correlation:
     input:
         correlation_results = "work_folder/data/dates/GO/correlation/{aspect}_depth_{depth}_cutoff_{cutoff}_temporal_correlation_results.csv"
     output:
-        correlation_plot = "work_folder/data/dates/GO/plots/{aspect}_depth_{depth}_cutoff_{cutoff}_temporal_correlation_plot.png"
+        fold_change_plot = "work_folder/data/dates/GO/plots/{aspect}_depth_{depth}_cutoff_{cutoff}_temporal_correlation_plot.png"
     script:
-        "../pyScripts/dates/GO/visualize_GO_temporal_correlation.py"
+        "../pyScripts/plotting/visualize_GO_temporal_correlation.py"

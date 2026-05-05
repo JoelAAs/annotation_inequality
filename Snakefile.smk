@@ -17,6 +17,7 @@ include: "src/smkFiles/RawNetwork.smk"
 include: "src/smkFiles/HDONetwork.smk"
 include: "src/smkFiles/GONetwork.smk"
 include: "src/smkFiles/GOAnnotationDates.smk"
+include: "src/smkFiles/HDOAnnotationDates.smk"
 
 ASPECTS = ["BP", "CC", "MF"]
 
@@ -230,3 +231,34 @@ rule all:
                aspect = ASPECTS),
         expand("work_folder/data/dates/GO/correlation/{aspect}_depth_5_cutoff_20_temporal_correlation_results.csv",
                aspect = ASPECTS),
+        #expand("work_folder/data/dates/GO/plots/{aspect}_depth_5_cutoff_20_temporal_correlation_plot.png",
+        #       aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/plots/{aspect}_depth_5_cutoff_20_fractions_plot.png",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/plots/{aspect}_depth_5_cutoff_20_fractions_plot_general.png",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/network_statistics/{aspect}_depth_5_cutoff_20_edges_evolution_statistics_time_traveler.csv",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/plots/edges_evolution/{aspect}_depth_5_cutoff_20_edges_evolution_fraction_plot_time_traveler.png",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/network_statistics/{aspect}_depth_5_cutoff_20_edges_evolution_statistics_time_traveler_one_year_span.csv",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/plots/edges_evolution/{aspect}_depth_5_cutoff_20_edges_evolution_fraction_plot_time_traveler_one_year_span.png",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/network_statistics/{aspect}_depth_5_cutoff_20_edges_evolution_statistics.csv",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/plots/edges_evolution/{aspect}_depth_5_cutoff_20_edges_evolution_fraction_plot.png",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/network_statistics/{aspect}_depth_5_cutoff_20_edges_evolution_statistics_one_year_span.csv",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/plots/edges_evolution/{aspect}_depth_5_cutoff_20_edges_evolution_fraction_plot_one_year_span.png",
+               aspect = ASPECTS),
+
+        # --- HDO ANNOTATIONS DATES SECTION ---
+        "work_folder/data/dates/HDO/opentargets/evidence",
+        "work_folder/data/dates/HDO/opentargets/targets",
+        "work_folder/data/dates/HDO/opentargets/diseases",
+        "work_folder/data/dates/HDO/HDO_first_annotation_dates.csv",
+        "work_folder/data/dates/HDO/networks_with_dates/HDO_network_with_dates.pkl",
+        "work_folder/data/dates/HDO/networks_with_dates/HDO_network_with_dates_complete.pkl",
+        "work_folder/data/dates/HDOO/networks_with_dates/HDO_final_network.pkl",

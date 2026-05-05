@@ -44,8 +44,8 @@ for go_id, group in df.groupby('GO_id'):
     total_diff = future_total - past_total
     total_mean_diff = np.mean(total_diff)
     
-    # -- Log2 Fold Change (Pseudocounts added to avoid Division by Zero) --
-    total_log2fc = np.mean(np.log2((future_total + 1) / (past_total + 1)))
+    # -- Linear Fold Change (Pseudocounts added to avoid Division by Zero) --
+    total_fc = np.mean((future_total + 1) / (past_total + 1))
     
     if np.all(total_diff == 0):
         total_wilcoxon_p = 1.0
@@ -67,8 +67,8 @@ for go_id, group in df.groupby('GO_id'):
     annot_diff = future_annot - past_annot
     annot_mean_diff = np.mean(annot_diff)
     
-    # -- Log2 Fold Change --
-    annot_log2fc = np.mean(np.log2((future_annot + 1) / (past_annot + 1)))
+    # -- Linear Fold Change --
+    annot_fc = np.mean((future_annot + 1) / (past_annot + 1))
     
     if np.all(annot_diff == 0):
         annot_wilcoxon_p = 1.0
@@ -85,13 +85,13 @@ for go_id, group in df.groupby('GO_id'):
         'Total_Spearman_Rho': round(total_rho, 4),
         'Total_Spearman_P': '{:.2e}'.format(total_spearman_p),
         'Total_Wilcoxon_MeanDiff': round(total_mean_diff, 4),
-        'Total_Log2FC': round(total_log2fc, 4),
+        'Total_FC': round(total_fc, 4),
         'Total_Wilcoxon_P': '{:.2e}'.format(total_wilcoxon_p),
         # Annotated Stats
         'Annot_Spearman_Rho': round(annot_rho, 4),
         'Annot_Spearman_P': '{:.2e}'.format(annot_spearman_p),
         'Annot_Wilcoxon_MeanDiff': round(annot_mean_diff, 4),
-        'Annot_Log2FC': round(annot_log2fc, 4),
+        'Annot_FC': round(annot_fc, 4),
         'Annot_Wilcoxon_P': '{:.2e}'.format(annot_wilcoxon_p)
     })
 
