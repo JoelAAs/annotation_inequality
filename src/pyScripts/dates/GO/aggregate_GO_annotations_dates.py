@@ -13,10 +13,14 @@ for file in input_files:
 
 if not df_list:
     with open(output_file, "w") as f:
-        f.write("Gene\tGO_ID\tFirst_Date_Annotated\n")
+        f.write("Gene\tGO_ID\tFirst_Date_Annotated\tEvidence\tQualifier\n")
     print("[WARNING] No matching Gene/GO annotations found.")
 else:
     master_df = pd.concat(df_list, ignore_index=True)
+    
+    initial_len = len(master_df)
+    master_df = master_df[~master_df['Qualifier'].fillna('').str.startswith('NOT')]
+    print(f"[STATUS] Removed {initial_len - len(master_df)} annotations with 'NOT' qualifiers.")
     
     # Sort chronologically, then drop duplicates keeping the oldest date
     master_df = master_df.sort_values(by="Date")
@@ -25,7 +29,7 @@ else:
     print(f"[STATUS] Found inception dates for {len(final_df)} before removing NaN dates.")
 
     final_df = final_df.dropna(subset=["Date"])
-    final_df = final_df.rename(columns={"Date": "First_Date_Annotated"})
+    final_df = final_df.rename(columns={"Date": "First_Date_Annotated"}) 
     final_df["First_Date_Annotated"] = final_df["First_Date_Annotated"].astype(int)
     final_df.to_csv(output_file, sep="\t", index=False)
     

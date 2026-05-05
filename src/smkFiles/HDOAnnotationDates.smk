@@ -62,6 +62,6 @@ rule add_edge_dates_to_HDO_network:
         network_with_all_dates = "work_folder/data/dates/HDO/networks_with_dates/HDO_network_with_dates_complete.pkl", 
         bp_publications = "work_folder/data/intact/bait_prey_publications_complete_dates.pq"
     output:
-        final_network = "work_folder/data/dates/HDOO/networks_with_dates/HDO_final_network.pkl"
+        final_network = "work_folder/data/dates/HDO/networks_with_dates/HDO_final_network.pkl"
     script:
         "../pyScripts/dates/HDO/add_edge_dates_to_HDO_network.py"

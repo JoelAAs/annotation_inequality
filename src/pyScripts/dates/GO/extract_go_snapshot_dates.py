@@ -10,7 +10,7 @@ with open(genes_file, "r") as f:
     target_genes = set(line.strip() for line in f if line.strip())
 
 with gzip.open(snapshot_file, "rt", encoding="utf-8") as f_in, open(output_file, "w", encoding="utf-8") as f_out:
-    f_out.write("Gene\tGO_ID\tDate\n")
+    f_out.write("Gene\tGO_ID\tDate\tEvidence\tQualifier\n")
     
     for line in f_in:
         if line.startswith("!"): continue
@@ -20,8 +20,10 @@ with gzip.open(snapshot_file, "rt", encoding="utf-8") as f_in, open(output_file,
             
         gene = parts[2]
         go_id = parts[4]
-        date = parts[13] 
+        date = parts[13]
+        evidence = parts[6]
+        qualifier = parts[3] 
         
         if gene in target_genes:
             if not target_gos or go_id in target_gos:
-                f_out.write(f"{gene}\t{go_id}\t{date}\n")
+                f_out.write(f"{gene}\t{go_id}\t{date}\t{evidence}\t{qualifier}\n")

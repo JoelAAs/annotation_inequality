@@ -8,14 +8,8 @@ TARGET_GO_TERMS = ""
 SPECIES = "HUMAN" 
 
 def get_all_GO_snapshots_downloads(wildcards):
-    # This print will appear ONLY after the checkpoint finishes
-    # print("\n[STATUS] Checkpoint triggered! Reading the newly generated file list...")
-    
     with open(checkpoints.get_GO_ftp_list.get().output[0]) as f:
         files = [line.strip() for line in f if line.strip()]
-    
-    # Print how many files it found before it starts downloading
-    # print(f"[STATUS] Found {len(files)} historical snapshots. Queuing download jobs...\n")
     
     return expand("work_folder/data/dates/GO/snapshots/{filename}", filename=files)
 
@@ -31,36 +25,33 @@ checkpoint get_GO_ftp_list:
         with urllib.request.urlopen(req) as response:
             html = response.read().decode('utf-8')
         
-        # 1. Grab EVERY link on the page
+        # Grab EVERY link on the page
         all_links = re.findall(r'href="([^"]+)"', html)
         
         valid_files = set()
         for link in all_links:
             filename = link.split("/")[-1]
             
-            # 2. Check for modern files AND legacy files that are compressed
+            # Check for modern files AND legacy files that are compressed
             if ("gaf" in filename or "gene_association" in filename) and filename.endswith(".gz"):
                 
-                # 3. NEW: Explicitly exclude isoforms, RNAs, and complexes
+                # NEW: Explicitly exclude isoforms, RNAs, and complexes
                 if not any(x in filename for x in ["isoform", "rna", "complex", "plus", "ref"]):
                     valid_files.add(filename)
         
-        # 4. Write them to the text file
+        # Write them to the text file
         with open(output[0], "w") as f:
             for file_name in sorted(valid_files):
                 f.write(file_name + "\n")
 
-# Rule: Download using the HTTPS link
 rule download_GO_snapshot:
     output:
         "work_folder/data/dates/GO/snapshots/{filename}"
     params:
-        # FIXED: Single curly braces here so the wildcard evaluates correctly!
         url=lambda wildcards: f"https://ftp.ebi.ac.uk/pub/databases/GO/goa/old/{SPECIES}/{wildcards.filename}"
     message: 
         "--> [JOB] Downloading snapshot: {wildcards.filename}"
     shell:
-        # Removed -q so wget will print helpful error logs if it ever fails
         "wget -O {output} {params.url}"
 
 rule mark_GO_downloads_complete:
@@ -72,10 +63,8 @@ rule mark_GO_downloads_complete:
         touch("work_folder/data/dates/GO/downloads_complete.txt")
 
 def get_all_parsed_snapshots(wildcards):
-    # print("\n[STATUS] Checkpoint triggered! Reading the newly generated file list...")
     with open(checkpoints.get_GO_ftp_list.get().output[0]) as f:
         files = [line.strip() for line in f if line.strip()]
-    # print(f"[STATUS] Found {len(files)} clean historical snapshots. Queuing jobs...\n")
     return expand("work_folder/data/dates/GO/parsed/{filename}.csv", filename=files)
 
 rule extract_GO_snapshot_dates:
@@ -279,3 +268,254 @@ rule visualize_GO_temporal_correlation:
         fold_change_plot = "work_folder/data/dates/GO/plots/{aspect}_depth_{depth}_cutoff_{cutoff}_temporal_correlation_plot.png"
     script:
         "../pyScripts/plotting/visualize_GO_temporal_correlation.py"
+
+# --- ELECTRONICALLY/MANUALLY INFERRED SECTION ---
+rule compute_GO_annotations_first_dates_differentiated:
+    input:
+        get_all_parsed_snapshots
+    output:
+        dates_IEA = "work_folder/data/dates/GO/GO_first_annotation_dates_IEA.csv",
+        dates_MANUAL = "work_folder/data/dates/GO/GO_first_annotation_dates_MANUAL.csv"
+    script:
+        "../pyScripts/dates/GO/aggregate_GO_annotations_dates_differentiated.py"
+
+rule inject_dates_to_GO_network_IEA:
+    input:
+        network = "work_folder/data/network/GO/{aspect}_bait_prey_publications_network.pkl",
+        dates = "work_folder/data/dates/GO/GO_first_annotation_dates_IEA.csv",
+        mapping = "work_folder/data/network/raw_networks/hgnc_complete_set.txt"
+    output:
+        network_with_dates = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_network_with_dates_IEA.pkl"
+    script:
+        "../pyScripts/dates/GO/inject_GO_annotations_dates.py"
+
+rule inject_dates_to_GO_network_MANUAL:
+    input:
+        network = "work_folder/data/network/GO/{aspect}_bait_prey_publications_network.pkl",
+        dates = "work_folder/data/dates/GO/GO_first_annotation_dates_MANUAL.csv",
+        mapping = "work_folder/data/network/raw_networks/hgnc_complete_set.txt"
+    output:
+        network_with_dates = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_network_with_dates_MANUAL.pkl"
+    script:
+        "../pyScripts/dates/GO/inject_GO_annotations_dates.py"
+
+rule assign_dates_to_GO_missing_ones_IEA:
+    input:
+        network_with_dates = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_network_with_dates_IEA.pkl",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        network_with_all_dates = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_network_with_dates_complete_IEA.pkl"
+    script:
+        "../pyScripts/dates/GO/assign_dates_to_GO_missing_ones.py"
+
+rule assign_dates_to_GO_missing_ones_MANUAL:
+    input:
+        network_with_dates = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_network_with_dates_MANUAL.pkl",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        network_with_all_dates = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_network_with_dates_complete_MANUAL.pkl"
+    script:
+        "../pyScripts/dates/GO/assign_dates_to_GO_missing_ones.py"
+
+rule add_edge_dates_to_GO_network_IEA:
+    input:
+        network_with_all_dates = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_network_with_dates_complete_IEA.pkl", 
+        bp_publications = "work_folder/data/intact/bait_prey_publications_complete_dates.pq"
+    output:
+        final_network = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_final_network_IEA.pkl"
+    script:
+        "../pyScripts/dates/GO/add_edge_dates_to_GO_network.py"
+
+rule add_edge_dates_to_GO_network_MANUAL:
+    input:
+        network_with_all_dates = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_network_with_dates_complete_MANUAL.pkl", 
+        bp_publications = "work_folder/data/intact/bait_prey_publications_complete_dates.pq"
+    output:
+        final_network = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_final_network_MANUAL.pkl"
+    script:
+        "../pyScripts/dates/GO/add_edge_dates_to_GO_network.py"
+
+rule compare_past_present_and_future_GO_networks_IEA:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_final_network_IEA.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output: 
+        networks_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_networks_statistics_IEA.csv"
+    script: 
+        "../pyScripts/dates/GO/compare_past_present_and_future_GO_networks.py"
+
+rule visualize_past_present_and_future_GO_networks_statistics_IEA:
+    input: 
+        networks_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_networks_statistics_IEA.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output: 
+        network_statistics_total_plots = "work_folder/data/dates/GO/plots/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_total_plots_IEA.png",
+        network_statistics_annotated_plots = "work_folder/data/dates/GO/plots/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_annotated_plots_IEA.png"
+    script:
+        "../pyScripts/plotting/visualize_past_present_and_future_GO_networks_statistics.py"
+
+rule compare_past_present_and_future_GO_networks_MANUAL:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_final_network_MANUAL.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output: 
+        networks_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_networks_statistics_MANUAL.csv"
+    script: 
+        "../pyScripts/dates/GO/compare_past_present_and_future_GO_networks.py"
+
+rule visualize_past_present_and_future_GO_networks_statistics_MANUAL:
+    input: 
+        networks_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_networks_statistics_MANUAL.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output: 
+        network_statistics_total_plots = "work_folder/data/dates/GO/plots/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_total_plots_MANUAL.png",
+        network_statistics_annotated_plots = "work_folder/data/dates/GO/plots/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_annotated_plots_MANUAL.png"
+    script:
+        "../pyScripts/plotting/visualize_past_present_and_future_GO_networks_statistics.py"
+
+## Time Traveler/ True Historian IEA
+
+rule compare_edges_evolution_in_GO_networks_time_traveler_IEA:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_final_network_IEA.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_time_traveler_IEA.csv"
+    script:
+        "../pyScripts/dates/GO/compare_edge_evolution_in_GO_networks_time_traveler.py"
+
+rule visualize_edges_evolution_in_GO_networks_time_traveler_IEA:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_time_traveler_IEA.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/edges_evolution/differentiated/IEA/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_time_traveler_IEA.png"
+    script:
+        "../pyScripts/plotting/visualize_edges_evolution_in_GO_networks_time_traveler.py"
+
+rule compare_edges_evolution_in_GO_networks_time_traveler_one_year_span_IEA:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_final_network_IEA.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_time_traveler_one_year_span_IEA.csv"
+    script:
+        "../pyScripts/dates/GO/compare_edge_evolution_in_GO_networks_time_traveler_one_year_span.py"
+
+rule visualize_edges_evolution_in_GO_networks_time_traveler_one_year_span_IEA:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_time_traveler_one_year_span_IEA.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/edges_evolution/differentiated/IEA/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_time_traveler_one_year_span_IEA.png"
+    script:
+        "../pyScripts/plotting/visualize_edges_evolution_in_GO_networks_time_traveler_one_year_span.py"
+
+rule compare_edges_evolution_in_GO_networks_IEA:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_final_network_IEA.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_IEA.csv"
+    script:
+        "../pyScripts/dates/GO/compare_edge_evolution_in_GO_networks.py"
+
+rule visualize_edges_evolution_in_GO_networks_IEA:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_IEA.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/edges_evolution/differentiated/IEA/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_IEA.png"
+    script:
+        "../pyScripts/plotting/visualize_edges_evolution_in_GO_networks.py"
+
+rule compare_edges_evolution_in_GO_networks_one_year_span_IEA:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_final_network_IEA.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_one_year_span_IEA.csv"
+    script:
+        "../pyScripts/dates/GO/compare_edge_evolution_in_GO_networks_one_year_span.py"
+
+rule visualize_edges_evolution_in_GO_networks_one_year_span_IEA:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_one_year_span_IEA.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/edges_evolution/differentiated/IEA/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_one_year_span_IEA.png"
+    script:
+        "../pyScripts/plotting/visualize_edges_evolution_in_GO_networks_one_year_span.py"
+
+## Time Traveler/ True Historian MANUAL
+rule compare_edges_evolution_in_GO_networks_time_traveler_MANUAL:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_final_network_MANUAL.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_time_traveler_MANUAL.csv"
+    script:
+        "../pyScripts/dates/GO/compare_edge_evolution_in_GO_networks_time_traveler.py"
+
+rule visualize_edges_evolution_in_GO_networks_time_traveler_MANUAL:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_time_traveler_MANUAL.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/edges_evolution/differentiated/MANUAL/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_time_traveler_MANUAL.png"
+    script:
+        "../pyScripts/plotting/visualize_edges_evolution_in_GO_networks_time_traveler.py"
+
+rule compare_edges_evolution_in_GO_networks_time_traveler_one_year_span_MANUAL:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_final_network_MANUAL.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_time_traveler_one_year_span_MANUAL.csv"
+    script:
+        "../pyScripts/dates/GO/compare_edge_evolution_in_GO_networks_time_traveler_one_year_span.py"
+
+rule visualize_edges_evolution_in_GO_networks_time_traveler_one_year_span_MANUAL:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_time_traveler_one_year_span_MANUAL.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/edges_evolution/differentiated/MANUAL/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_time_traveler_one_year_span_MANUAL.png"
+    script:
+        "../pyScripts/plotting/visualize_edges_evolution_in_GO_networks_time_traveler_one_year_span.py"
+
+rule compare_edges_evolution_in_GO_networks_MANUAL:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_final_network_MANUAL.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_MANUAL.csv"
+    script:
+        "../pyScripts/dates/GO/compare_edge_evolution_in_GO_networks.py"
+
+rule visualize_edges_evolution_in_GO_networks_MANUAL:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_MANUAL.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/edges_evolution/differentiated/MANUAL/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_MANUAL.png"
+    script:
+        "../pyScripts/plotting/visualize_edges_evolution_in_GO_networks.py"
+
+rule compare_edges_evolution_in_GO_networks_one_year_span_MANUAL:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/differentiated/{aspect}_final_network_MANUAL.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_one_year_span_MANUAL.csv"
+    script:
+        "../pyScripts/dates/GO/compare_edge_evolution_in_GO_networks_one_year_span.py"
+
+rule visualize_edges_evolution_in_GO_networks_one_year_span_MANUAL:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/network_statistics/differentiated/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_one_year_span_MANUAL.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/edges_evolution/differentiated/MANUAL/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_one_year_span_MANUAL.png"
+    script:
+        "../pyScripts/plotting/visualize_edges_evolution_in_GO_networks_one_year_span.py"
