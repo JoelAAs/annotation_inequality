@@ -13,7 +13,7 @@ print(f"Loading raw data...")
 with open(raw_network, 'rb') as f:
     G = pickle.load(f)
 annotations = pd.read_csv(annot_df, sep = '\t')
-annotations = annotations.dropna(subset = ['depth'])
+annotations = annotations[annotations['depth'] != -1]
 
 print(f"Raw data loaded!\n")
 

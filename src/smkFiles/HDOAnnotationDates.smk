@@ -27,6 +27,12 @@ rule get_opentargets_diseases:
         wget -e robots=off -r -np -nd -R "index.html*" https://ftp.ebi.ac.uk/pub/databases/opentargets/platform/26.03/output/disease/ -P {output.diseases_dir}
         """
 
+rule download_clinvar:
+    output:
+        "work_folder/data/clinvar/variant_summary.txt.gz"
+    shell:
+        "wget -O {output} https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz"
+
 rule compute_HDO_annotations_first_dates:
     input:
         evidence_folder = "work_folder/data/dates/HDO/opentargets/evidence",
@@ -46,7 +52,7 @@ rule inject_dates_to_HDO_network:
     script:
         "../pyScripts/dates/HDO/inject_HDO_annotations_dates.py"
 
-## TODO
+
 rule assign_dates_to_HDO_missing_ones:
     input:
         network_with_dates = "work_folder/data/dates/HDO/networks_with_dates/HDO_network_with_dates.pkl",
@@ -56,7 +62,6 @@ rule assign_dates_to_HDO_missing_ones:
     script:
         "../pyScripts/dates/HDO/assign_dates_to_HDO_missing_ones.py"
 
-## TODO
 rule add_edge_dates_to_HDO_network:
     input:
         network_with_all_dates = "work_folder/data/dates/HDO/networks_with_dates/HDO_network_with_dates_complete.pkl", 
@@ -65,3 +70,11 @@ rule add_edge_dates_to_HDO_network:
         final_network = "work_folder/data/dates/HDO/networks_with_dates/HDO_final_network.pkl"
     script:
         "../pyScripts/dates/HDO/add_edge_dates_to_HDO_network.py"
+
+rule re_query_for_HDO_annotations_per_gene:
+    input: 
+        bp_frequencies = "work_folder/data/intact/bait_prey_frequencies.pq"
+    output: 
+        annot_df = "work_folder/data/HDO/new_annotations_per_gene_with_ancestors.csv"
+    script:
+        "../pyScripts/dates/HDO/re_query_for_HDO_annotations_per_gene.R" 

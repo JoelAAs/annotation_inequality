@@ -1,7 +1,7 @@
 checkpoint add_HDO_annotations_to_bait_prey_publications_network:
     input: 
         bp_network = "work_folder/data/network/raw_networks/bait_prey_publications_network.pkl",
-        complete_annotations = "work_folder/data/HDO/annotations_per_gene_with_ancestors.csv"
+        complete_annotations = "work_folder/data/HDO/new_annotations_per_gene_with_ancestors.csv"
     output: 
         bp_network_with_attributes = "work_folder/data/network/HDO/HDO_bait_prey_publications_network.pkl"
     script: 
