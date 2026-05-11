@@ -27,11 +27,16 @@ rule all:
         "work_folder/data/intact/bait_prey_publications_no_gene_complete_dates.pq",
         "work_folder/data/intact/bait_prey_publications_complete_dates.pq",
 
+        # --- ONTOLOGIES DOWNLOAD SECTION ---
+        "work_folder/data/HDO/doid.obo",
+
         # --- ANNOTATIONS VS GENE COUNTS ---
         expand("work_folder/data/plots/GO_plots/{aspect}_annotations_vs_gene_counts_distrib.png",
                aspect = ASPECTS),
         expand("work_folder/data/GO/annotations_vs_gene_counts/{aspect}_annotations_gene_counts.csv",
                aspect = ASPECTS),
+        "work_folder/data/plots/HDO_plots/full_annotations_vs_gene_counts_distrib.png",
+        "work_folder/data/HDO/full_annotations_gene_counts.csv",
 
         # --- GO COMPLETE FEATURE MATRIX SECTION ---
         expand("work_folder/data/GO/{aspect}_annotations_per_gene.csv", aspect=ASPECTS),
@@ -86,6 +91,26 @@ rule all:
         get_all_GO_top_abs_plots,
         expand("work_folder/data/GO/cutoff/adj_r2_plots/{aspect}_cutoff_{cutoff}_adj_r2.png",
                aspect = ASPECTS, cutoff = CUTOFFS),
+
+        # --- HDO COMPLETE FEATURE MATRIX SECTION
+        "work_folder/data/HDO/feature_matrices/complete_matrix_with_ancestors.csv",
+
+        # ---HDO SINGLE DEPTH FEATURE MATRIX SECTION ---
+        expand("work_folder/data/HDO/feature_matrices/full_feature_matrix_with_depth_{hdo_depth}.csv", hdo_depth = HDO_DEPTHS_WITH_ANCESTORS),
+        "work_folder/data/HDO/full_annotations_per_depth.csv",
+        expand("work_folder/data/HDO/annot_counts_per_depth/full_annot_counts_depth_{hdo_depth}.csv", hdo_depth = HDO_DEPTHS_WITH_ANCESTORS),
+
+        # --- HDO COMPLETE EN SECTION ---
+        "work_folder/data/ElasticNet/HDO_full/EN_coefficients/complete_elastic_net_coefficients.csv",
+        "work_folder/data/ElasticNet/HDO_full/plots/Top/complete_top_coefficients.png",
+        "work_folder/data/ElasticNet/HDO_full/plots/Distribution/complete_coefficients_distribution.png",
+
+        # --- HDO SINGLE DEPTH EN SECTION ---
+        expand("work_folder/data/ElasticNet/HDO_full/EN_coefficients/elastic_net_coefficients_depth_{hdo_depth}.csv", hdo_depth = HDO_DEPTHS_WITH_ANCESTORS),
+        expand("work_folder/data/ElasticNet/HDO_full/plots/Top/top_coefficients_depth_{hdo_depth}.png", hdo_depth = HDO_DEPTHS_WITH_ANCESTORS),
+        expand("work_folder/data/ElasticNet/HDO_full/plots/Distribution/coefficients_distribution_depth_{hdo_depth}.png", hdo_depth = HDO_DEPTHS_WITH_ANCESTORS),
+        "work_folder/data/ElasticNet/HDO_full/plots/annotations_per_depth.png",
+        "work_folder/data/ElasticNet/HDO_full/plots/genes_per_depth.png",
 
         # --- COMPLETE HDO CUTOFF SECTION ---
         expand("work_folder/data/HDO/cutoff/feature_matrices/complete/complete_feature_matrix_cutoff_{cutoff}.csv", cutoff=CUTOFFS),
@@ -322,3 +347,18 @@ rule all:
         "work_folder/data/dates/HDO/networks_with_dates/HDO_network_with_dates.pkl",
         "work_folder/data/dates/HDO/networks_with_dates/HDO_network_with_dates_complete.pkl",
         "work_folder/data/dates/HDO/networks_with_dates/HDO_final_network.pkl",
+        "work_folder/data/dates/HDO/top_5_annotations/nodes_with_top_5_HDO_annotations_depth_5_cutoff_20.csv",
+        "work_folder/data/dates/HDO/top_5_annotations/nodes_with_top_5_HDO_annotations_depth_5_cutoff_20.pkl",
+        "work_folder/data/dates/HDO/network_statistics/depth_5_cutoff_20_networks_statistics.csv",
+        "work_folder/data/dates/HDO/plots/depth_5_cutoff_20_total_plots.png",
+        "work_folder/data/dates/HDO/plots/depth_5_cutoff_20_annotated_plots.png",
+        "work_folder/data/dates/HDO/plots/depth_5_cutoff_20_fractions_plot.png",
+        "work_folder/data/dates/HDO/plots/depth_5_cutoff_20_fractions_plot_general.png",
+        "work_folder/data/dates/HDO/network_statistics/depth_5_cutoff_20_edges_evolution_statistics_time_traveler.csv",
+        "work_folder/data/dates/HDO/plots/edges_evolution/depth_5_cutoff_20_edges_evolution_fraction_plot_time_traveler.png",
+        "work_folder/data/dates/HDO/network_statistics/depth_5_cutoff_20_edges_evolution_statistics_time_traveler_one_year_span.csv",
+        "work_folder/data/dates/HDO/plots/edges_evolution/depth_5_cutoff_20_edges_evolution_fraction_plot_time_traveler_one_year_span.png",
+        "work_folder/data/dates/HDO/network_statistics/depth_5_cutoff_20_edges_evolution_statistics.csv",
+        "work_folder/data/dates/HDO/plots/edges_evolution/depth_5_cutoff_20_edges_evolution_fraction_plot.png",
+        "work_folder/data/dates/HDO/network_statistics/depth_5_cutoff_20_edges_evolution_statistics_one_year_span.csv",
+        "work_folder/data/dates/HDO/plots/edges_evolution/depth_5_cutoff_20_edges_evolution_fraction_plot_one_year_span.png",

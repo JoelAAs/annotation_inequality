@@ -13,7 +13,7 @@ rule download_hdo_ontology:
 ## Complete matrices section
 rule compute_complete_HDO_feature_matrix_with_cutoff:
     input: 
-        complete_annotations = "work_folder/data/HDO/annotations_per_gene_with_ancestors.csv",
+        complete_annotations = "work_folder/data/HDO/new_annotations_per_gene_with_ancestors.csv",
         bait_usage = "work_folder/data/intact/bait_count.csv",
         count_df = "work_folder/data/HDO/full_annotations_gene_counts.csv"
     output: 
@@ -86,7 +86,7 @@ rule plot_complete_HDO_doids_lost_with_each_cutoff:
 ## Single depth section
 rule compute_single_depth_HDO_feature_matrix_with_cutoff:
     input: 
-        complete_annotations = "work_folder/data/HDO/annotations_per_gene_with_ancestors.csv",
+        complete_annotations = "work_folder/data/HDO/new_annotations_per_gene_with_ancestors.csv",
         bait_usage = "work_folder/data/intact/bait_count.csv",
         count_df = "work_folder/data/HDO/full_annotations_gene_counts.csv"
     output: 

@@ -45,7 +45,7 @@ rule compute_HDO_feature_matrix:
 
 rule compute_HDO_feature_matrix_with_ancestors:
     input:
-        complete_annotations = "work_folder/data/HDO/annotations_per_gene_with_ancestors.csv"
+        complete_annotations = "work_folder/data/HDO/new_annotations_per_gene_with_ancestors.csv"
     output:
         feature_matrix = expand("work_folder/data/HDO/feature_matrices/full_feature_matrix_with_depth_{hdo_depth}.csv", hdo_depth = HDO_DEPTHS_WITH_ANCESTORS),
         annotations_per_depth = "work_folder/data/HDO/full_annotations_per_depth.csv",
@@ -55,7 +55,7 @@ rule compute_HDO_feature_matrix_with_ancestors:
 
 rule compute_complete_HDO_feature_matrix_with_ancestors:
     input:
-        complete_annotations = "work_folder/data/HDO/annotations_per_gene_with_ancestors.csv"
+        complete_annotations = "work_folder/data/HDO/new_annotations_per_gene_with_ancestors.csv"
     output:
         complete_matrix = "work_folder/data/HDO/feature_matrices/complete_matrix_with_ancestors.csv"
     script:

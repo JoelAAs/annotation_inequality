@@ -46,7 +46,7 @@ rule visualize_HDO_coefficients_with_ancestors:
     script:
         "plot_HDO_EN_coefficients_with_ancestors.py"
 
-rule fit_complete_elastic_net_with_ancestors:
+rule fit_complete_HDO_elastic_net_with_ancestors:
     input:
         complete_matrix = "work_folder/data/HDO/feature_matrices/complete_matrix_with_ancestors.csv",
         bait_usage = "work_folder/data/intact/bait_count.csv"

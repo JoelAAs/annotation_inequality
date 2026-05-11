@@ -6,6 +6,7 @@ textfile = snakemake.output.annotations_per_depth
 counts = snakemake.output.counts_per_annot
 
 df = pd.read_csv(input_df, sep = '\t')
+df = df.drop('term', axis = 1)
 df.fillna({
     'doid': 'No_doid',
     'depth': -1

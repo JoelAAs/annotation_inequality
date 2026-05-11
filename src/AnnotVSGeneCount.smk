@@ -9,7 +9,7 @@ rule plot_HDO_annotations_vs_gene_counts:
 
 rule plot_HDO_with_ancestors_annotations_vs_gene_counts:
     input: 
-        annotation_df = "work_folder/data/HDO/annotations_per_gene_with_ancestors.csv",
+        annotation_df = "work_folder/data/HDO/new_annotations_per_gene_with_ancestors.csv",
         bait_usage = "work_folder/data/intact/bait_count.csv"
     output: 
         output_plot = "work_folder/data/plots/HDO_plots/full_annotations_vs_gene_counts_distrib.png",
