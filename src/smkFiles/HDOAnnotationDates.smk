@@ -208,3 +208,21 @@ rule re_query_for_disgenet:
         annot_df = "work_folder/data/HDO/new_annotations_per_gene_with_ancestors_disgenet.csv"
     script:
         "../pyScripts/dates/HDO/re_query_for_disgenet.R" 
+
+rule new_compare_edges_evolution_in_HDO_networks:
+    input: 
+        final_network = "work_folder/data/dates/HDO/networks_with_dates/HDO_final_network.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/HDO/top_5_annotations/nodes_with_top_5_HDO_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/HDO/new_network_statistics/depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics.csv"
+    script:
+        "../pyScripts/dates/HDO/new_compare_edge_evolution_in_HDO_networks.py"
+
+rule new_visualize_edges_evolution_in_HDO_networks:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/HDO/new_network_statistics/depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics.csv",
+        ontology = "work_folder/data/HDO/doid.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/HDO/plots/new_edges_evolution/depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot.png"
+    script:
+        "../pyScripts/plotting/new_visualize_edges_evolution_in_GO_networks.py"

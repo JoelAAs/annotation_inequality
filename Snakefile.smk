@@ -278,6 +278,24 @@ rule all:
                aspect = ASPECTS),
         expand("work_folder/data/dates/GO/plots/edges_evolution/{aspect}_depth_5_cutoff_20_edges_evolution_fraction_plot_one_year_span.png",
                aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/new_network_statistics/{aspect}_depth_5_cutoff_20_edges_evolution_statistics.csv",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/plots/new_edges_evolution/{aspect}_depth_5_cutoff_20_edges_evolution_fraction_plot.png",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/plots/new_edges_evolution/{aspect}_depth_5_cutoff_20_edges_evolution_fraction_plot_one_year_span.png",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/new_network_statistics/{aspect}_depth_5_cutoff_20_edges_evolution_statistics_time_traveler.csv",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/plots/new_edges_evolution/{aspect}_depth_5_cutoff_20_edges_evolution_fraction_plot_time_traveler.png",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/absolute_timeline/{aspect}_depth_5_cutoff_20_edges_evolution_statistics_fixed_edges.csv",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/plots/absolute_timeline/{aspect}_depth_5_cutoff_20_edges_evolution_fraction_plot_fixed_edges.png",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/absolute_timeline/{aspect}_depth_5_cutoff_20_edges_evolution_statistics_fixed_annotations.csv",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/plots/absolute_timeline/{aspect}_depth_5_cutoff_20_edges_evolution_fraction_plot_fixed_annotations.png",
+               aspect = ASPECTS),
 
         # --- GO ELECTRONICALLY/MANUALLY INFERRED SECTION ---
         "work_folder/data/dates/GO/GO_first_annotation_dates_IEA.csv",
@@ -362,3 +380,13 @@ rule all:
         "work_folder/data/dates/HDO/plots/edges_evolution/depth_5_cutoff_20_edges_evolution_fraction_plot.png",
         "work_folder/data/dates/HDO/network_statistics/depth_5_cutoff_20_edges_evolution_statistics_one_year_span.csv",
         "work_folder/data/dates/HDO/plots/edges_evolution/depth_5_cutoff_20_edges_evolution_fraction_plot_one_year_span.png",
+        "work_folder/data/dates/HDO/new_network_statistics/depth_5_cutoff_20_edges_evolution_statistics.csv",
+        "work_folder/data/dates/HDO/plots/new_edges_evolution/depth_5_cutoff_20_edges_evolution_fraction_plot.png",
+
+        # --- GO RANDOM WALK SECTION ---
+        expand("work_folder/data/dates/GO/top_5_annotations/top_5_{aspect}_annotations_dates_depth_5_cutoff_20.csv",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/top_5_annotations/top_5_{aspect}_annotations_dates_depth_5_cutoff_20.pkl",
+               aspect = ASPECTS),
+        expand("work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_5_cutoff_20",
+               aspect = ASPECTS)

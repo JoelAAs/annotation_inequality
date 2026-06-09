@@ -2,7 +2,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-import statsmodels.api as sm
 import pronto
 import textwrap
 
@@ -55,12 +54,9 @@ for i, do_id in enumerate(do_ids):
         do_name = do_id
     wrapped_label = "\n".join(textwrap.wrap(f"{do_id}: {do_name}", width=30))
     
-    plt.step(x_vals, y_vals, where='post', color=colors[i], alpha=0.3, linewidth=1.5, linestyle='--')
+    plt.step(x_vals, y_vals, where='post', label=wrapped_label, color=colors[i], linewidth=3.5, zorder=4)
     
-    plt.scatter(x_vals, y_vals, color=colors[i], s=30, alpha=0.6, zorder=5)
-    
-    lowess = sm.nonparametric.lowess(y_vals, x_vals, frac=0.3)
-    plt.plot(lowess[:, 0], lowess[:, 1], label=wrapped_label, color=colors[i], linewidth=3.5, zorder=4)
+    plt.scatter(x_vals, y_vals, color=colors[i], s=50, alpha=1.0, zorder=5)
 
 plt.axvline(x=0, color='red', linestyle='--', linewidth=2.5, zorder=1, label="Annotation Event (Month 0)")
 

@@ -519,3 +519,185 @@ rule visualize_edges_evolution_in_GO_networks_one_year_span_MANUAL:
         fractions_plot = "work_folder/data/dates/GO/plots/edges_evolution/differentiated/MANUAL/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_one_year_span_MANUAL.png"
     script:
         "../pyScripts/plotting/visualize_edges_evolution_in_GO_networks_one_year_span.py"
+
+# --- RE-MADE SECTION ---
+
+rule new_compare_edges_evolution_in_GO_networks:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/{aspect}_final_network.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/new_network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics.csv"
+    script:
+        "../pyScripts/dates/GO/new_compare_edge_evolution_in_GO_networks.py"
+
+rule new_visualize_edges_evolution_in_GO_networks:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/new_network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/new_edges_evolution/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot.png"
+    script:
+        "../pyScripts/plotting/new_visualize_edges_evolution_in_GO_networks.py"
+
+rule new_visualize_edges_evolution_in_GO_networks_one_year_span:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/new_network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/new_edges_evolution/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_one_year_span.png"
+    script:
+        "../pyScripts/plotting/new_visualize_edges_evolution_in_GO_networks_one_year_span.py"
+
+rule new_compare_edges_evolution_in_GO_networks_time_traveler:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/{aspect}_final_network.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/new_network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_time_traveler.csv"
+    script:
+        "../pyScripts/dates/GO/new_compare_edge_evolution_in_GO_networks_time_traveler.py"
+
+rule new_visualize_edges_evolution_in_GO_networks_time_traveler:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/new_network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_time_traveler.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/new_edges_evolution/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_time_traveler.png"
+    script:
+        "../pyScripts/plotting/new_visualize_edges_evolution_in_GO_networks_time_traveler.py"
+
+rule compare_edges_evolution_in_GO_networks_fixed_edges:
+    input: 
+        final_network = "work_folder/data/dates/GO/networks_with_dates/{aspect}_final_network.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/new_network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_fixed_edges.csv"
+    script:
+        "../pyScripts/dates/GO/compare_edges_evolution_in_GO_networks_fixed_edges.py"
+
+rule visualize_edges_evolution_in_GO_networks_fixed_edges:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/new_network_statistics/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_fixed_edges.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/new_edges_evolution/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_fixed_edges.png"
+    script:
+        "../pyScripts/plotting/visualize_edges_evolution_in_GO_networks_fixed_edges.py"
+
+# --- ABSOLUTE TIME SECTION ---
+
+rule absolute_timeline_compare_edges_evolution_in_GO_networks_fixed_edges:
+    input:
+        final_network = "work_folder/data/dates/GO/networks_with_dates/{aspect}_final_network.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/absolute_timeline/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_fixed_edges.csv"
+    script:
+        "../pyScripts/dates/GO/absolute_timeline_compare_edges_evolution_in_GO_networks_fixed_edges.py"
+
+rule absolute_timeline_visualize_edges_evolution_in_GO_networks_fixed_edges:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/absolute_timeline/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_fixed_edges.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/absolute_timeline/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_fixed_edges.png"
+    script:
+        "../pyScripts/plotting/absolute_timeline_visualize_edges_evolution_in_GO_networks_fixed_edges.py"
+
+rule absolute_timeline_compare_edges_evolution_in_GO_networks_fixed_annotations:
+    input:
+        final_network = "work_folder/data/dates/GO/networks_with_dates/{aspect}_final_network.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        edges_evolution_statistics = "work_folder/data/dates/GO/absolute_timeline/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_fixed_annotations.csv"
+    script:
+        "../pyScripts/dates/GO/absolute_timeline_compare_edges_evolution_in_GO_networks_fixed_annotations.py"
+
+rule absolute_timeline_visualize_edges_evolution_in_GO_networks_fixed_annotations:
+    input:
+        edges_evolution_statistics = "work_folder/data/dates/GO/absolute_timeline/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_statistics_fixed_annotations.csv",
+        ontology = "work_folder/data/GO/go-basic.obo"
+    output:
+        fractions_plot = "work_folder/data/dates/GO/plots/absolute_timeline/{aspect}_depth_{depth}_cutoff_{cutoff}_edges_evolution_fraction_plot_fixed_annotations.png"
+    script:
+        "../pyScripts/plotting/absolute_timeline_visualize_edges_evolution_in_GO_networks_fixed_annotations.py"
+
+# --- RANDOM WALK CLOSENESS SECTION ---
+
+rule compute_top_5_GO_annotations_dates:
+    input:
+        final_network = "work_folder/data/dates/GO/networks_with_dates/{aspect}_final_network.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        top_5_annotations_dates_df = "work_folder/data/dates/GO/top_5_annotations/top_5_{aspect}_annotations_dates_depth_{depth}_cutoff_{cutoff}.csv",
+        top_5_annotations_dates_pkl = "work_folder/data/dates/GO/top_5_annotations/top_5_{aspect}_annotations_dates_depth_{depth}_cutoff_{cutoff}.pkl"
+    script:
+        "../pyScripts/dates/GO/compute_top_5_GO_annotations_dates.py"
+
+rule generate_GO_temporal_matrices:
+    input:
+        final_network = "work_folder/data/dates/GO/networks_with_dates/{aspect}_final_network.pkl",
+        top_annot_df = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        matrix_dir = directory("work_folder/data/dates/GO/temporal_matrices/{aspect}_depth_{depth}_cutoff_{cutoff}")
+    threads: 10
+    script:
+        "../pyScripts/dates/GO/generate_temporal_matrices.py"
+
+rule compute_GO_mean_adjacency_values:
+    input:
+        matrix_dir = "work_folder/data/dates/GO/temporal_matrices/{aspect}_depth_{depth}_cutoff_{cutoff}"
+    output:
+        mean_adjacency_dir = directory("work_folder/data/dates/GO/mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}")
+    threads: 5
+    script:
+        "../pyScripts/dates/GO/compute_mean_adjacency_values.py"
+
+rule plot_GO_mean_adjacency_values_over_time:
+    input:
+        mean_adjacency_dir = "work_folder/data/dates/GO/mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}"
+    output:
+        plots_dir = directory("work_folder/data/dates/GO/plots/mean_adjacency/{aspect}_depth_{depth}_cutoff_{cutoff}")
+    threads: 5
+    script:
+        "../pyScripts/plotting/plot_mean_adjacency_values.py"
+
+rule compute_GO_distance_of_future_annotation_to_already_annotated_genes:
+    input:
+        input_dir = "work_folder/data/dates/GO/temporal_matrices/{aspect}_depth_{depth}_cutoff_{cutoff}"
+    output:
+        distances_dir = directory("work_folder/data/dates/GO/mean_fut_annot_dist_to_already_annot/{aspect}_depth_{depth}_cutoff_{cutoff}")
+    threads: 5
+    script:
+        "../pyScripts/dates/GO/compute_distance_of_future_annotation_to_already_annotated_genes.py"
+
+rule retrieve_first_annotation_dates_for_top_5_GO_annotations:
+    input:
+        final_network = "work_folder/data/dates/GO/networks_with_dates/{aspect}_final_network.pkl",
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl"
+    output:
+        first_annotation_dates_dir = directory("work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}")
+    threads: 5
+    script:
+        "../pyScripts/dates/GO/retrieve_first_annotation_dates_for_top_5_annotations.py"
+
+rule compute_GO_correlation_between_adjacency_and_time_to_annot:
+    input:
+        distances_dir = "work_folder/data/dates/GO/mean_fut_annot_dist_to_already_annot/{aspect}_depth_{depth}_cutoff_{cutoff}",
+        first_annotation_dates_dir = "work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}"
+    output:
+        correlation_file = "work_folder/data/dates/GO/spearman_corr/{aspect}_depth_{depth}_cutoff_{cutoff}_adjacency_time_to_annot_correlation.csv"
+    threads: 10
+    script:
+        "../pyScripts/dates/GO/compute_correlation_between_adjacency_and_time_to_annot.py"
+
+## TODO
+rule plot_GO_correlation_between_adjacency_and_time_to_annot:
+    input:
+        distances_dir = "work_folder/data/dates/GO/mean_fut_annot_dist_to_already_annot/{aspect}_depth_{depth}_cutoff_{cutoff}",
+        first_annotation_dates_dir = "work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}"
+    output:
+        plot_file = "work_folder/plots/dates/GO/{aspect}_depth_{depth}_cutoff_{cutoff}_spearman_adjacency_vs_time_to_annot.png"
+    script:
+        "../pyScripts/plotting/plot_GO_adjacency_vs_time_to_annot_correlation.py"
