@@ -8,7 +8,7 @@ input_dir = snakemake.input.input_dir
 output_dir = snakemake.output.distances_dir
 num_threads = snakemake.threads
 
-print(f"Computing GO {aspect} mean distance of future annotated genes to already annotated genes...")
+print(f"Computing GO {aspect} mean distance of future annotated genes from already annotated genes...")
 
 os.makedirs(output_dir, exist_ok = True)
 
@@ -16,7 +16,7 @@ def process_go_folder(go_folder_path):
     go_id_safe = os.path.basename(go_folder_path)
     csv_files = glob.glob(os.path.join(go_folder_path, '*.csv'))
     
-    print(f"\n--- [Core] Starting GO {aspect} id: {go_id_safe} mean distance of future annotated genes to already annotated genes calculation...")
+    print(f"\n--- [Core] Starting GO {aspect} id: {go_id_safe} mean distance of future annotated genes from already annotated genes calculation...")
     
     results = []
     

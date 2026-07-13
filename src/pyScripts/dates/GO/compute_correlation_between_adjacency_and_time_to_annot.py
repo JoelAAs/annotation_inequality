@@ -3,7 +3,7 @@ import numpy as np
 import os
 import glob
 import concurrent.futures
-from scipy.stats import spearmanr
+from scipy.stats import spearmanr, mannwhitneyu
 
 aspect = snakemake.wildcards.aspect
 distances_dir = snakemake.input.distances_dir
@@ -11,7 +11,7 @@ first_annotation_dates_dir = snakemake.input.first_annotation_dates_dir
 outputfile = snakemake.output.correlation_file
 num_threads = snakemake.threads
 
-print(f"\nStarting Spearman correlation calculation between adjacency and time to annotation for GO {aspect}...\n")
+print(f"\nStarting Spearman and Mann-Whitney calculations between adjacency and time to annotation for GO {aspect}...\n")
 
 os.makedirs(os.path.dirname(outputfile), exist_ok = True)
 
@@ -22,13 +22,12 @@ def process_go_correlation(go_id_safe):
 
     if not os.path.exists(dist_file) or not os.path.exists(annot_file):
         print(f"\n[{go_id_safe}] Mean distances or first annotation file missing! Returning empty result!")
-
         return []
     
     df_dist = pd.read_csv(dist_file, sep = '\t')
     df_annot = pd.read_csv(annot_file, sep = '\t')
 
-    print(f"\n--- [Core] Starting GO {aspect} id: {go_id_safe} Spearman correlation between adjacency and time to annotation calculation...")
+    print(f"\n--- [Core] Starting GO {aspect} id: {go_id_safe} statistical tests calculation...")
 
     df_annot['gene_id'] = df_annot['gene_id'].astype(str)
     df_dist['Future_Gene'] = df_dist['Future_Gene'].astype(str)
@@ -45,7 +44,6 @@ def process_go_correlation(go_id_safe):
 
     if df_future.empty:
         print(f"[{go_id_safe}] Empty df after applying threshold!")
-
         return[]
 
     clean_go_id = go_id_safe.replace('_', ':')
@@ -58,27 +56,51 @@ def process_go_correlation(go_id_safe):
 
     # Variance check (we have actual varying data to correlate?)
     if df_future['Mean_Probability_From_Annotated'].nunique() <= 1 or df_future['time_to_annot_days'].nunique() <= 1:
-        print(f"\n[{go_id_safe}] No varying data... Spearman correlation cannot be computed!")
-        
+        print(f"\n[{go_id_safe}] No varying data... Statistical tests cannot be computed!")
         return []
 
     try:
         # Compute overall spearman correlation for the entire GO annotation's history
         rho, pval = spearmanr(df_future['Mean_Probability_From_Annotated'], df_future['time_to_annot_days'])
 
+        # Distribution comparison with Mann-Whitney u test
+        THRESHOLD_DAYS = 365  # 1 year threshold 
+        
+        df_close = df_future[df_future['time_to_annot_days'] <= THRESHOLD_DAYS]['Mean_Probability_From_Annotated']
+        df_far = df_future[df_future['time_to_annot_days'] > THRESHOLD_DAYS]['Mean_Probability_From_Annotated']
+        
+        mw_pval = np.nan
+        mean_diff = np.nan
+        fc = np.nan
+        
+        if len(df_close) > 0 and len(df_far) > 0:
+            # Mann-Whitney U test (1-sided: expecting 'Close' to have a greater adjacency than 'Far')
+            stat, mw_pval = mannwhitneyu(df_close, df_far, alternative = 'greater')
+            
+            mean_close = df_close.mean()
+            mean_far = df_far.mean()
+            
+            mean_diff = mean_close - mean_far
+            # Added tiny epsilon to avoid division by zero just in case
+            fc = mean_close / (mean_far + 1e-12)
+
         if not np.isnan(rho):
-            print(f"\n[{clean_go_id}] Spearman correlation ready!")
+            print(f"\n[{clean_go_id}] Spearman & Mann-Whitney calculations ready!")
 
             return[{
                 'GO_id': clean_go_id,
                 'Spearman_rho': rho,
                 'p_value': pval,
-                'Total_Observations': len(df_future)
+                'MW_p_value': mw_pval,
+                'Mean_Diff_Close_vs_Far': mean_diff,
+                'Fold_Change': fc,
+                'Total_Observations': len(df_future),
+                'Obs_Close_1yr': len(df_close),
+                'Obs_Far_1yr': len(df_far)
             }]
 
     except:
-        print(f"\n[{go_id_safe}] Spearman rho is null!")
-
+        print(f"\n[{go_id_safe}] Spearman rho or MW is null!")
         pass
 
     return []
@@ -90,7 +112,7 @@ if __name__ == '__main__':
 
     all_results = []
 
-    print(f"\nLaunching Spearman correlation calculation between adjacency and time to annotation for GO {aspect} with {num_threads} cores...")
+    print(f"\nLaunching statistical calculations for GO {aspect} with {num_threads} cores...")
 
     with concurrent.futures.ProcessPoolExecutor(max_workers = num_threads) as executor:
         worker_outputs = list(executor.map(process_go_correlation, go_terms_safe))
@@ -102,7 +124,7 @@ if __name__ == '__main__':
         df_final = df_final.sort_values(by = ['GO_id'])
         df_final.to_csv(outputfile, sep = '\t', index = False)
 
-        print(f"\n--- [Core] SUCCESS: GO {aspect} Spearman correlation between adjacency and time to annotation ready and saved to {outputfile}! ---")
+        print(f"\n--- [Core] SUCCESS: GO {aspect} statistics ready and saved to {outputfile}! ---")
 
     else:
         # Fallback if all dates/terms fail the thresholds
@@ -110,7 +132,12 @@ if __name__ == '__main__':
             'GO_id',
             'Spearman_rho',
             'p_value',
-            'Total_Observations'
+            'MW_p_value',
+            'Mean_Diff_Close_vs_Far',
+            'Fold_Change',
+            'Total_Observations',
+            'Obs_Close_1yr',
+            'Obs_Far_1yr'
         ])
 
         df_empty.to_csv(outputfile, sep = '\t', index = False)

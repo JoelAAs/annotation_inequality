@@ -18,6 +18,7 @@ include: "src/smkFiles/HDONetwork.smk"
 include: "src/smkFiles/GONetwork.smk"
 include: "src/smkFiles/GOAnnotationDates.smk"
 include: "src/smkFiles/HDOAnnotationDates.smk"
+include: "src/smkFiles/PresentationPlots.smk"
 
 ASPECTS = ["BP", "CC", "MF"]
 
@@ -389,4 +390,15 @@ rule all:
         expand("work_folder/data/dates/GO/top_5_annotations/top_5_{aspect}_annotations_dates_depth_5_cutoff_20.pkl",
                aspect = ASPECTS),
         expand("work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_5_cutoff_20",
-               aspect = ASPECTS)
+               aspect = ASPECTS),
+
+        # --- PRESENTATION PLOTS SECTION ---
+        expand("work_folder/data/presentation_plots/go_{aspect}_depth_5_cutoff_20_neighbor_sums.png",
+               aspect = ASPECTS),
+        expand("work_folder/data/presentation_plots/go_{aspect}_depth_5_cutoff_20_annotated_neighbors.png",
+               aspect = ASPECTS),
+        "work_folder/data/presentation_plots/hdo_depth_5_cutoff_20_annotated_neighbors.png",
+        "work_folder/data/presentation_plots/hdo_depth_5_cutoff_20_neighbor_sums.png",
+        expand("work_folder/data/dendrograms/GO/visualization/scatterplot/{aspect}_scatterplot_cutoff_20.png",
+               aspect = ASPECTS),
+        "work_folder/data/dendrograms/HDO/visualization/scatterplot/scatterplot_cutoff_20.png"

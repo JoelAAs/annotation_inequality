@@ -22,12 +22,12 @@ lines_data = []
 
 # DATA AGGREGATION
 for dist_file in distance_files:
-    go_id_safe = os.path.basename(dist_file).replace('_mean_distance_from_annotated.csv')
+    go_id_safe = os.path.basename(dist_file).replace('_mean_distances_from_annotated.csv', '')
+    clean_go_id = go_id_safe.replace('_', ':')
     annot_file = os.path.join(first_annotation_dates_dir, f'{go_id_safe}_first_annotation_dates.csv')
 
     if not os.path.exists(annot_file):
         print(f"\nWARNING: File path {annot_file} doesn't exist! Skipping it...")
-
         continue
 
     df_dist = pd.read_csv(dist_file, sep = '\t')
@@ -47,7 +47,6 @@ for dist_file in distance_files:
     df_future = df_future.groupby('Date').filter(lambda x: len(x) >= 4).copy()
     if df_future.empty:
         print(f"\nWARNING: {go_id_safe} df after threshold application is empty! Skipping it..")
-
         continue
 
     # Time to annotation in days
@@ -58,16 +57,29 @@ for dist_file in distance_files:
     # Variance check
     if df_future['Mean_Probability_From_Annotated'].nunique() <= 1 or df_future['time_to_annot_days'].nunique() <= 1:
         print(f"\nNo varying data for id {go_id_safe}! Spearman correlation cannot be computed!")
-
         continue
 
-    # Cronological sorting
-    df_future = df_future.sort_values(by = 'time_to_annot_days')
+    # Cronological sorting mean probability, standard deviation, and sample size calculation for each day to normalize for days with low sample size
+    df_curve = df_future.groupby('time_to_annot_days')['Mean_Probability_From_Annotated'].agg(['mean', 'std', 'count']).reset_index()
+    df_curve = df_curve.sort_values(by = 'time_to_annot_days')
+    df_curve['std'] = df_curve['std'].fillna(0)
+    df_curve['se'] = df_curve['std'] / np.sqrt(df_curve['count'])
 
-    # Save raw sorted arrays to draw the true curve for the GO annot
+    SMOOTHING_WINDOW = 90
+    df_curve['smoothed_y'] = df_curve['mean'].rolling(window = SMOOTHING_WINDOW, min_periods = 1).mean()
+    df_curve['smoothed_se'] = df_curve['se'].rolling(window = SMOOTHING_WINDOW, min_periods = 1).mean()
+
+    # 95% confidence intervals
+    df_curve['ci_upper'] = df_curve['smoothed_y'] + (1.96 * df_curve['smoothed_se'])
+    df_curve['ci_lower'] = df_curve['smoothed_y'] - (1.96 * df_curve['smoothed_se'])
+
     lines_data.append({
-        'x': df_future['time_to_annot_days'].values,
-        'y': df_future['Mean_Probability_From_Annotated'].values
+        'go_id': clean_go_id,
+        'obs_count': df_curve['count'].sum(),
+        'x': df_curve['time_to_annot_days'].values,
+        'y': df_curve['smoothed_y'].values,
+        'y_upper': df_curve['ci_upper'].values,
+        'y_lower': df_curve['ci_lower'].values
     })
 
     # Save raw dataframe for the later global trendline
@@ -80,7 +92,60 @@ if not all_data:
     plt.figure()
     plt.text(0.5, 0.5, 'No valid data plot', ha = 'center', va = 'center')
     plt.savefig(outputplot)
+    plt.close()
     sys.exit(0)
 
 # PLOTTING
 # Instead if valid data is found:
+num_lines = len(lines_data)
+print(f"\nDrawing {num_lines} true Go {aspect} annotation trajectories...")
+
+plt.figure(figsize = (14, 10))
+
+colors = sns.color_palette('tab10', num_lines)
+
+# Draw the true curved lines
+for i, line in enumerate(lines_data):
+    plt.plot(
+        line['x'],
+        line['y'],
+        color = colors[i],
+        alpha = 0.9,
+        linewidth = 2.5,
+        label = f"{line['go_id']} (N = {int(line['obs_count']):,})"
+    )
+
+    plt.fill_between(
+        line['x'],
+        line['y_lower'],
+        line['y_upper'],
+        color = colors[i],
+        alpha = 0.15,
+        edgecolor = None
+    )
+
+# Draw the global trend line over everything
+df_master = pd.concat(all_data, ignore_index = True)
+sns.regplot(
+    data = df_master,
+    x = 'time_to_annot_days',
+    y = 'Mean_Probability_From_Annotated',
+    scatter = False,
+    line_kws = {'color': 'red', 'linewidth': 6, 'linestyle': '--', 'label': f'Global {aspect} Trend (Avg)'}
+)
+
+plt.xlabel('Time To Annotation (Days)', fontsize = 14)
+plt.ylabel('Adjacency (Mean Probability From Annotated)', fontsize = 14)
+plt.title(f'GO {aspect} Annotations Adjacency vs Time To Annotation', fontsize = 18)
+plt.xticks(fontsize = 12)
+plt.yticks(fontsize = 12)
+
+# Legend adjustment kept as requested to prevent overlapping out of the box
+plt.legend(fontsize=12, loc='best', framealpha=0.9)
+plt.grid(True, linestyle = '--', alpha = 0.4)
+
+plt.tight_layout()
+plt.savefig(outputplot, dpi = 400, bbox_inches = 'tight')
+plt.close()
+
+print(f"\nSUCCESS: Trajectory plot of GO {aspect} annotations adjacency vs time to annotation ready and saved to {outputplot}!")

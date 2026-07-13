@@ -687,17 +687,26 @@ rule compute_GO_correlation_between_adjacency_and_time_to_annot:
         distances_dir = "work_folder/data/dates/GO/mean_fut_annot_dist_to_already_annot/{aspect}_depth_{depth}_cutoff_{cutoff}",
         first_annotation_dates_dir = "work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}"
     output:
-        correlation_file = "work_folder/data/dates/GO/spearman_corr/{aspect}_depth_{depth}_cutoff_{cutoff}_adjacency_time_to_annot_correlation.csv"
+        correlation_file = "work_folder/data/dates/GO/spearman_and_wilcoxon_corr/{aspect}_depth_{depth}_cutoff_{cutoff}_adjacency_time_to_annot_correlation.csv"
     threads: 10
     script:
         "../pyScripts/dates/GO/compute_correlation_between_adjacency_and_time_to_annot.py"
 
-## TODO
 rule plot_GO_correlation_between_adjacency_and_time_to_annot:
     input:
         distances_dir = "work_folder/data/dates/GO/mean_fut_annot_dist_to_already_annot/{aspect}_depth_{depth}_cutoff_{cutoff}",
         first_annotation_dates_dir = "work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}"
     output:
-        plot_file = "work_folder/plots/dates/GO/{aspect}_depth_{depth}_cutoff_{cutoff}_spearman_adjacency_vs_time_to_annot.png"
+        plot_file = "work_folder/data/dates/GO/plots/correlation/{aspect}_depth_{depth}_cutoff_{cutoff}_spearman_adjacency_vs_time_to_annot.png"
     script:
         "../pyScripts/plotting/plot_GO_adjacency_vs_time_to_annot_correlation.py"
+
+rule plot_GO_time_to_annot_distribution_one_year_threshold:
+    input: 
+        distances_dir = "work_folder/data/dates/GO/mean_fut_annot_dist_to_already_annot/{aspect}_depth_{depth}_cutoff_{cutoff}",
+        first_annotation_dates_dir = "work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}",
+        correlation_file = "work_folder/data/dates/GO/spearman_and_wilcoxon_corr/{aspect}_depth_{depth}_cutoff_{cutoff}_adjacency_time_to_annot_correlation.csv"
+    output: 
+        distribution_plot = "work_folder/data/dates/GO/plots/correlation/{aspect}_depth_{depth}_cutoff_{cutoff}_time_to_annot_distribution_one_year_threshold.png"
+    script: 
+        "../pyScripts/plotting/plot_GO_time_to_annot_distribution_one_year_threshold.py"
