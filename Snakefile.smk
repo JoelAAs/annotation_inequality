@@ -19,6 +19,7 @@ include: "src/smkFiles/GONetwork.smk"
 include: "src/smkFiles/GOAnnotationDates.smk"
 include: "src/smkFiles/HDOAnnotationDates.smk"
 include: "src/smkFiles/PresentationPlots.smk"
+include: "src/smkFiles/GOAnnotationsPrediction.smk"
 
 ASPECTS = ["BP", "CC", "MF"]
 
@@ -391,6 +392,7 @@ rule all:
                aspect = ASPECTS),
         expand("work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_5_cutoff_20",
                aspect = ASPECTS),
+        get_all_GO_master_matrices,
 
         # --- PRESENTATION PLOTS SECTION ---
         expand("work_folder/data/presentation_plots/go_{aspect}_depth_5_cutoff_20_neighbor_sums.png",

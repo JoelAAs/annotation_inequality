@@ -9,6 +9,7 @@ network = snakemake.input.network_with_all_dates
 coeff_df = snakemake.input.coefficients
 outputdf = snakemake.output.nodes_with_top_5_annotations_df
 outputpickle = snakemake.output.nodes_with_top_5_annotations_pickle
+completion_flag = snakemake.output.completion_flag
 
 print(f"Computing lists of annotated GO {aspect} genes with the top 5 annotations for depth {depth} and cutoff {cutoff}...")
 
@@ -44,5 +45,8 @@ final_df.to_csv(outputdf, sep  = '\t', index = False)
 
 with open(outputpickle, 'wb') as f:
     pickle.dump(final_df, f)
+    
+with open(completion_flag, 'w') as f:
+    f.write("Finished generating top annotations.")
 
 print(f"Lists of annotated GO {aspect} genes with the top 5 annotations for depth {depth} and cutoff {cutoff} ready!")

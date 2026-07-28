@@ -139,13 +139,14 @@ rule add_edge_dates_to_GO_network:
     script:
         "../pyScripts/dates/GO/add_edge_dates_to_GO_network.py"
 
-rule find_GO_nodes_with_top_5_annotations:
+checkpoint find_GO_nodes_with_top_5_annotations:
     input:
         network_with_all_dates = "work_folder/data/dates/GO/networks_with_dates/{aspect}_network_with_dates_complete.pkl", 
         coefficients = "work_folder/data/ElasticNet/GO_cutoff/EN_coefficients/single_depth/{aspect}_depth_{depth}_elastic_net_coefficients_cutoff_{cutoff}.csv"
     output: 
         nodes_with_top_5_annotations_df = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.csv",
-        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl" 
+        nodes_with_top_5_annotations_pickle = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl",
+        completion_flag = "work_folder/data/dates/GO/done_files/top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.done" 
     script: 
         "../pyScripts/dates/GO/find_GO_nodes_with_top_5_annotations.py"
 
@@ -710,3 +711,30 @@ rule plot_GO_time_to_annot_distribution_one_year_threshold:
         distribution_plot = "work_folder/data/dates/GO/plots/correlation/{aspect}_depth_{depth}_cutoff_{cutoff}_time_to_annot_distribution_one_year_threshold.png"
     script: 
         "../pyScripts/plotting/plot_GO_time_to_annot_distribution_one_year_threshold.py"
+
+rule calculate_GO_empirical_null_distributions:
+    input:
+        final_network = "work_folder/data/dates/GO/networks_with_dates/{aspect}_final_network.pkl",
+        top_annot_df = "work_folder/data/dates/GO/top_5_annotations/nodes_with_top_5_{aspect}_annotations_depth_{depth}_cutoff_{cutoff}.pkl",
+        distances_dir = "work_folder/data/dates/GO/mean_fut_annot_dist_to_already_annot/{aspect}_depth_{depth}_cutoff_{cutoff}"
+    output:
+        null_master_file = "work_folder/data/dates/GO/null_distribution/{aspect}_depth_{depth}_cutoff_{cutoff}_master_null_adjacency_distribution.csv"
+    threads: 10 
+    script:
+        "../pyScripts/dates/GO/calculate_empirical_null_distributions.py"
+
+rule multiple_testing_correction_for_GO_null_distribution_z_scores:
+    input: 
+        null_master_file = "work_folder/data/dates/GO/null_distribution/{aspect}_depth_{depth}_cutoff_{cutoff}_master_null_adjacency_distribution.csv"
+    output: 
+        corrected_file = "work_folder/data/dates/GO/null_distribution/{aspect}_depth_{depth}_cutoff_{cutoff}_master_null_adjacency_fdr_corrected.csv"
+    script: 
+        "../pyScripts/dates/GO/apply_multiple_testing_correction_to_GO_null_distribution_z_scores.py"
+
+rule plot_GO_true_vs_empirical_null_distributions:
+    input:
+        corrected_file = "work_folder/data/dates/GO/null_distribution/{aspect}_depth_{depth}_cutoff_{cutoff}_master_null_adjacency_fdr_corrected.csv"
+    output:
+        output_folder = directory("work_folder/data/dates/GO/plots/topology_comparison/{aspect}_depth_{depth}_cutoff_{cutoff}")
+    script: 
+        "../pyScripts/plotting/plot_GO_true_vs_empirical_null_distributions.py"
