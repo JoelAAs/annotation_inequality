@@ -392,7 +392,11 @@ rule all:
                aspect = ASPECTS),
         expand("work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_5_cutoff_20",
                aspect = ASPECTS),
+
+        # --- MASTER MATRICES COMPUTATION ---
         get_all_GO_master_matrices,
+        #get_all_GO_mean_adjacencies,
+        #get_all_GO_true_annotated_genes_quantiles,
 
         # --- PRESENTATION PLOTS SECTION ---
         expand("work_folder/data/presentation_plots/go_{aspect}_depth_5_cutoff_20_neighbor_sums.png",
