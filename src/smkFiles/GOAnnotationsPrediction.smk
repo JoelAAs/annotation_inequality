@@ -141,7 +141,7 @@ def get_all_GO_best_quantile_plots(wildcards):
                 
                 # ALL terms go straight into the best_predictions folder
                 target_files.extend(
-                    expand("work_folder/data/dates/GO/plots/quantiles/best_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}_{term}_best_quantile.png",
+                    expand("work_folder/data/dates/GO/plots/quantiles/best_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_best_quantile.png",
                            aspect=a, depth=d, cutoff=c, term=my_terms)
                 )
                 
@@ -151,11 +151,65 @@ rule plot_GO_best_quantiles:
     input:
         mean_adj_file = "work_folder/data/dates/GO/probability_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_mean_adjacencies.parquet"
     output:
-        plot_file = "work_folder/data/dates/GO/plots/quantiles/best_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}_{term}_best_quantile.png"
+        plot_file = "work_folder/data/dates/GO/plots/quantiles/best_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_best_quantile.png"
     threads: 1
     script:
         "../pyScripts/plotting/plot_GO_best_quantiles.py"
 
-# rule plot_GO_true_annotated_genes_quantiles_over_time:
+def get_all_GO_true_annotated_genes_quantiles_over_time(wildcards):
+    target_files = []
+    
+    for a in TEMPORAL_MATRICES_ASPECTS:
+        for d in TEMPORAL_MATRICES_DEPTHS:
+            for c in TEMPORAL_MATRICES_CUTOFFS:
+                annot_file = checkpoints.find_GO_nodes_with_top_5_annotations.get(
+                    aspect=a, depth=d, cutoff=c
+                ).output.nodes_with_top_5_annotations_pickle
+                
+                top_annot_df = pd.read_pickle(annot_file)
+                my_terms = [str(term).replace(":", "_") for term in top_annot_df['GO_id'].unique()]
+                
+                # ALL terms go straight into the best_predictions folder
+                target_files.extend(
+                    expand("work_folder/data/dates/GO/plots/quantiles_over_time/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_quantiles_over_time.png",
+                           aspect=a, depth=d, cutoff=c, term=my_terms)
+                )
+                
+    return target_files
 
-# 1824480
+rule plot_GO_true_annotated_genes_quantiles_over_time:
+    input:
+        quantile_file = "work_folder/data/dates/GO/quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_quantiles.parquet"
+    output:
+        plot_file = "work_folder/data/dates/GO/plots/quantiles_over_time/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_quantiles_over_time.png"
+    script:
+        "../pyScripts/plotting/plot_GO_true_annotated_genes_quantiles_over_time.py"
+
+def get_all_GO_true_vs_permutations_predictive_power_over_time(wildcards):
+    target_files = []
+    
+    for a in TEMPORAL_MATRICES_ASPECTS:
+        for d in TEMPORAL_MATRICES_DEPTHS:
+            for c in TEMPORAL_MATRICES_CUTOFFS:
+                annot_file = checkpoints.find_GO_nodes_with_top_5_annotations.get(
+                    aspect=a, depth=d, cutoff=c
+                ).output.nodes_with_top_5_annotations_pickle
+                
+                top_annot_df = pd.read_pickle(annot_file)
+                my_terms = [str(term).replace(":", "_") for term in top_annot_df['GO_id'].unique()]
+                
+                # ALL terms go straight into the best_predictions folder
+                target_files.extend(
+                    expand("work_folder/data/dates/GO/plots/predictive_power/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_true_vs_perm.png",
+                           aspect=a, depth=d, cutoff=c, term=my_terms)
+                )
+                
+    return target_files
+
+rule plot_GO_true_vs_permutations_predictive_power_over_time:
+    input:
+        mean_adj_file = "work_folder/data/dates/GO/probability_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_mean_adjacencies.parquet"
+    output:
+        plot_file = "work_folder/data/dates/GO/plots/predictive_power/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_true_vs_perm.png"
+    script:
+        "../pyScripts/plotting/plot_GO_true_vs_permutations_predictive_power_over_time.py"

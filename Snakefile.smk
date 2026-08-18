@@ -395,8 +395,11 @@ rule all:
 
         # --- MASTER MATRICES COMPUTATION ---
         get_all_GO_master_matrices,
-        #get_all_GO_mean_adjacencies,
-        #get_all_GO_true_annotated_genes_quantiles,
+        get_all_GO_mean_adjacencies,
+        get_all_GO_true_annotated_genes_quantiles,
+        get_all_GO_best_quantile_plots,
+        get_all_GO_true_annotated_genes_quantiles_over_time,
+        get_all_GO_true_vs_permutations_predictive_power_over_time,
 
         # --- PRESENTATION PLOTS SECTION ---
         expand("work_folder/data/presentation_plots/go_{aspect}_depth_5_cutoff_20_neighbor_sums.png",
