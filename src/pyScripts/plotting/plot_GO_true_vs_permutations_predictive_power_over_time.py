@@ -52,7 +52,7 @@ plt.fill_between(
 )
 
 # Plot the True Annotations (PID0) on top
-plt.plot(true_line.index, true_line, label='True Annotations (PID0)', color='crimson', linewidth=2.5, marker='o', markersize=4)
+plt.plot(true_line.index, true_line, label='True Annotations', color='crimson', linewidth=2.5, marker='o', markersize=4)
 
 # Formatting
 plt.title(f"Predictive Power Over Time: True Annotations vs. Random Permutations\nTerm: {term}", fontsize=14, pad=15)

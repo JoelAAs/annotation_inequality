@@ -1,6 +1,5 @@
 import os
 import gc
-import json
 import pickle
 import ast
 import time
@@ -11,13 +10,13 @@ import scipy.sparse as sp
 import graph_tool.all as gt
 import concurrent.futures
 
+# --- SNAKEMAKE I/O ---
 aspect = snakemake.wildcards.aspect
 target_term_wildcard = snakemake.wildcards.term  
 target_term = target_term_wildcard.replace("_", ":") 
 
 network_file = snakemake.input.final_network
 top_annot_file = snakemake.input.top_annot_df
-bins_json_file = snakemake.input.bins_json
 output_matrix_dir = snakemake.output.matrix_dir
 
 num_threads = snakemake.threads 
@@ -28,31 +27,23 @@ print(f"\n=======================================================", flush=True)
 print(f"--- [START] Generating Matrices for {target_term} ({aspect})", flush=True)
 print(f"=======================================================\n", flush=True)
 
+# --- LOAD DATA ---
 with open(network_file, 'rb') as f:
     G_nx = pickle.load(f)
 
 top_annot_df = pd.read_pickle(top_annot_file)
     
-with open(bins_json_file, 'r') as f:
-    degree_bins = json.load(f)
-
 # Strict String Casting
 unique_gids_raw = list(G_nx.nodes())
 n_total_nodes = len(unique_gids_raw)
 name_to_gt_id = {str(name): i for i, name in enumerate(unique_gids_raw)}
 
-# Timeline Fix
+# Timeline Extraction
 node_annotations = {
     name_to_gt_id[str(node)]: data.get('go_annotations', []) 
     for node, data in G_nx.nodes(data=True)
 }
 
-gene_to_bin = {}
-for bin_key, nodes in degree_bins.items():
-    for node in nodes:
-        gene_to_bin[str(node)] = bin_key
-
-# Extract Edges
 edges_by_date = []
 for u, v, data in G_nx.edges(data=True):
     date_str = data.get('discovery_date')
@@ -116,8 +107,8 @@ def worker_compute_exact_walks(nodes_chunk, edges_up_to_date, n_nodes):
         chunk_results[int(u)] = probs.astype(np.float16)
         
     return chunk_results
-# --------------------------------------------------
 
+# --- TARGET TERM PREPARATION ---
 term_data = top_annot_df[top_annot_df['GO_id'] == target_term]
 if term_data.empty:
     raise ValueError(f"Term {target_term} not found in the annotation dataframe!\n")
@@ -151,10 +142,9 @@ edge_index = 0
 total_edges = len(edges_by_date)
 current_edges = []
 
+# --- MAIN CHRONOLOGICAL LOOP ---
 for current_date in unique_dates:
-    # Adding the prefix to easily identify every line in a crowded log file
     log_prefix = f"[{target_term} | {current_date}]"
-    
     print(f"\n--- {log_prefix} Initializing... ---", flush=True)
     
     true_annotated_genes = [g for g, d in gene_to_date.items() if d <= current_date]
@@ -165,47 +155,69 @@ for current_date in unique_dates:
         continue
         
     print(f"    {log_prefix} [INFO] Source Genes: {len(true_annotated_genes)} | Future Targets: {len(future_genes)}", flush=True)
+
+    # 1. ADVANCE TIMELINE FIRST 
+    while edge_index < total_edges and edges_by_date[edge_index][0] <= current_date:
+        _, u, v = edges_by_date[edge_index]
+        current_edges.append([u, v])
+        edge_index += 1
+
+    # 2. BUILD HISTORICAL GRAPH & GET EXACT DEGREES
+    g_balance = gt.Graph(directed=False)
+    g_balance.add_vertex(n_total_nodes)
+    if len(current_edges) > 0:
+        g_balance.add_edge_list(np.array(current_edges))
         
-    rng_decoy = np.random.default_rng(seed=int(current_date)) 
+    current_degrees = g_balance.get_out_degrees(np.arange(n_total_nodes))
+
+    # 3. DYNAMIC PERCENTILE BINNING 
+    print(f"    {log_prefix} [BINNING] Generating dynamic percentile bins...", flush=True)
+    bins = np.unique(np.percentile(current_degrees, np.linspace(0, 100, 100)).astype(int))
+    node_bins = np.digitize(current_degrees, bins)
+
+    degree_bins = {}
+    for i, b_idx in enumerate(node_bins):
+        bin_key = int(b_idx)
+        if bin_key not in degree_bins:
+            degree_bins[bin_key] = []
+        degree_bins[bin_key].append(str(unique_gids_raw[i]))
+
+    gt_id_to_bin = {i: int(b_idx) for i, b_idx in enumerate(node_bins)}
+
+    # 4. DRAW HISTORICAL PERMUTATIONS
+    term_numeric_id = int(target_term.split(":")[-1])
+    # Combine date and term ID for a completely unique, reproducible seed
+    unique_seed = int(current_date) + term_numeric_id
+    rng_decoy = np.random.default_rng(seed=unique_seed)
+    
     permutation_rows = [] 
     all_required_nodes = set(true_annotated_genes)
     
     for g in true_annotated_genes:
         permutation_rows.append((g, 0))
         
-    precomputed_pools = {}
     for true_gene in true_annotated_genes:
-        bin_key = gene_to_bin.get(true_gene)
-        if bin_key and bin_key in degree_bins:
-            bin_pool = degree_bins[bin_key]
-            valid_pool = [str(n) for n in bin_pool if str(n) not in all_term_genes]
-            precomputed_pools[true_gene] = valid_pool if valid_pool else [str(n) for n in bin_pool]
-        else:
-            precomputed_pools[true_gene] = []
+        true_gt_id = name_to_gt_id[true_gene]
+        current_bin = gt_id_to_bin[true_gt_id]
+        
+        bin_pool = degree_bins.get(current_bin, [])
+        valid_pool = [n for n in bin_pool if n not in all_term_genes]
+        pool = valid_pool if valid_pool else bin_pool
+        
+        if not pool:
+             pool = [str(n) for n in unique_gids_raw]
 
-    for true_gene in true_annotated_genes:
-        pool = precomputed_pools[true_gene]
-        if pool:
-            decoys = rng_decoy.choice(pool, size=NUM_PERMUTATIONS, replace=True)
-            for i, decoy in enumerate(decoys):
-                perm_id = i + 1
-                decoy_str = str(decoy)
-                permutation_rows.append((decoy_str, perm_id))
-                all_required_nodes.add(decoy_str)
+        decoys = rng_decoy.choice(pool, size=NUM_PERMUTATIONS, replace=True)
+        for i, decoy in enumerate(decoys):
+            perm_id = i + 1
+            decoy_str = str(decoy)
+            permutation_rows.append((decoy_str, perm_id))
+            all_required_nodes.add(decoy_str)
 
     unique_gt_ids = list(set([name_to_gt_id[g] for g in all_required_nodes if g in name_to_gt_id]))
 
-    while edge_index < total_edges and edges_by_date[edge_index][0] <= current_date:
-        _, u, v = edges_by_date[edge_index]
-        current_edges.append([u, v])
-        edge_index += 1
-
-    g_balance = gt.Graph(directed=False)
-    g_balance.add_vertex(n_total_nodes)
-    if len(current_edges) > 0:
-        g_balance.add_edge_list(np.array(current_edges))
-        
-    degrees = g_balance.get_out_degrees(unique_gt_ids)
+    # 5. EXECUTE MATH ON UNIQUE REQUIRED NODES
+    degrees = current_degrees[unique_gt_ids]
     sorted_indices = np.argsort(degrees)[::-1]
     sorted_gt_ids = np.array(unique_gt_ids)[sorted_indices]
     
@@ -229,6 +241,7 @@ for current_date in unique_dates:
     elapsed = time.time() - start_time
     print(f"    {log_prefix} [COMPUTE] Finished in {elapsed:.2f} seconds.", flush=True)
             
+    # 6. BUILD DATAFRAME & EXPORT
     row_multi_index = pd.MultiIndex.from_tuples(permutation_rows, names=['Gene_ID', 'Permutation_ID'])
     col_tuples = [(g, 'Future_Target') for g in future_genes]
     col_multi_index = pd.MultiIndex.from_tuples(col_tuples, names=['Target_ID', 'Status'])
@@ -247,7 +260,6 @@ for current_date in unique_dates:
     df_matrix = pd.DataFrame(matrix_data, index=row_multi_index, columns=col_multi_index, dtype=np.float16)
     file_path = os.path.join(output_matrix_dir, f"{current_date}.parquet")
     
-    # Check Disk Space Before Save
     total_bytes, used_bytes, free_bytes = shutil.disk_usage(output_matrix_dir)
     free_gb = free_bytes / (1024**3)
     print(f"    {log_prefix} [DISK] Space available before save: {free_gb:.2f} GB", flush=True)
@@ -258,7 +270,6 @@ for current_date in unique_dates:
     print(f"    {log_prefix} [SAVE] Compressing with zstd level 19...", flush=True)
     df_matrix.to_parquet(file_path, engine='pyarrow', compression='zstd', compression_level=19)
     
-    # Report File Size
     file_size_mb = os.path.getsize(file_path) / (1024**2)
     print(f"    {log_prefix} [SUCCESS] Saved Matrix: {file_path} | Size: {file_size_mb:.2f} MB", flush=True)
 
