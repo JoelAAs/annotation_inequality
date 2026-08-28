@@ -22,6 +22,9 @@ include: "src/smkFiles/PresentationPlots.smk"
 include: "src/smkFiles/GOAnnotationsPrediction.smk"
 
 ASPECTS = ["BP", "CC", "MF"]
+TEMPORAL_MATRICES_ASPECTS = ["BP"]
+TEMPORAL_MATRICES_DEPTHS = [5]
+TEMPORAL_MATRICES_CUTOFFS = [20]
 
 rule all:
     input:
@@ -399,6 +402,13 @@ rule all:
         get_all_GO_true_annotated_genes_quantiles,
         get_all_GO_true_annotated_genes_quantiles_over_time,
         get_all_GO_true_vs_permutations_predictive_power_over_time,
+        get_all_GO_mean_adjacency_over_time_grouped_by_time_to_annot_plots,
+        expand("work_folder/data/dates/GO/stats/tta_and_mean_adj_corr/{aspect}_depth_{depth}_cutoff_{cutoff}_spearman_correlation.csv",
+               aspect = TEMPORAL_MATRICES_ASPECTS, depth = TEMPORAL_MATRICES_DEPTHS, cutoff = TEMPORAL_MATRICES_CUTOFFS),
+        expand("work_folder/data/dates/GO/plots/tta_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/mean_adjacency_vs_time_to_annotation.png",
+               aspect = TEMPORAL_MATRICES_ASPECTS, depth = TEMPORAL_MATRICES_DEPTHS, cutoff = TEMPORAL_MATRICES_CUTOFFS),
+        expand("work_folder/data/dates/GO/plots/tta_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/mean_adjacency_distribution_multiple_thresholds.pdf",
+               aspect = TEMPORAL_MATRICES_ASPECTS, depth = TEMPORAL_MATRICES_DEPTHS, cutoff = TEMPORAL_MATRICES_CUTOFFS),             
 
         # --- PRESENTATION PLOTS SECTION ---
         expand("work_folder/data/presentation_plots/go_{aspect}_depth_5_cutoff_20_neighbor_sums.png",

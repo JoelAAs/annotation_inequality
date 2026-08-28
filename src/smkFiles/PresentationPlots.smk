@@ -61,3 +61,11 @@ rule create_HDO_scatterplot:
         scatterplot_png = "work_folder/data/dendrograms/HDO/visualization/scatterplot/scatterplot_cutoff_{cutoff}.png"
     script: 
         "../pyScripts/presentation_plots/create_HDO_scatterplot.py"
+
+rule plot_GO_bp_publications_network_node_degree_distribution:
+    input:
+        bp_network = "work_folder/data/network/raw_networks/bait_prey_publications_network.pkl"
+    output:
+        plot_file = "work_folder/data/presentation_plots/bp_publications_network_node_degree_distribution.png"
+    script:
+        "../pyScripts/presentation_plots/plot_GO_bp_publications_network_node_degree_distribution.py"

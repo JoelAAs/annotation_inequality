@@ -31,8 +31,7 @@ sns.lineplot(
     data=df, 
     x='Date', 
     y='Quantile', 
-    marker='o', 
-    linewidth=2,
+    linewidth=1.8,
     color='royalblue',
     errorbar=('ci', 95)
 )

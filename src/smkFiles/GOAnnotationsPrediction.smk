@@ -217,4 +217,59 @@ rule plot_GO_true_annotated_genes_quantiles_over_time:
     script:
         "../pyScripts/plotting/plot_GO_true_annotated_genes_quantiles_over_time.py"
 
-# 2694921
+def get_all_GO_mean_adjacency_over_time_grouped_by_time_to_annot_plots(wildcards):
+    target_files = []
+    
+    for a in TEMPORAL_MATRICES_ASPECTS:
+        for d in TEMPORAL_MATRICES_DEPTHS:
+            for c in TEMPORAL_MATRICES_CUTOFFS:
+                annot_file = checkpoints.find_GO_nodes_with_top_5_annotations.get(
+                    aspect=a, depth=d, cutoff=c
+                ).output.nodes_with_top_5_annotations_pickle
+                
+                top_annot_df = pd.read_pickle(annot_file)
+                my_terms = [str(term).replace(":", "_") for term in top_annot_df['GO_id'].unique()]
+                
+                # ALL terms go straight into the best_predictions folder
+                target_files.extend(
+                    expand("work_folder/data/dates/GO/plots/tta_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_mean_adjacencies_over_time_grouped_by_tta.png",
+                           aspect=a, depth=d, cutoff=c, term=my_terms)
+                )
+                
+    return target_files
+
+rule plot_GO_mean_adjacency_over_time_grouped_by_time_to_annot:
+    input: 
+        mean_adj_file = "work_folder/data/dates/GO/probability_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_mean_adjacencies.parquet",
+        annot_dates_file = "work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_first_annotation_dates.csv"
+    output: 
+        plot_file = "work_folder/data/dates/GO/plots/tta_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_mean_adjacencies_over_time_grouped_by_tta.png"
+    script: 
+        "../pyScripts/plotting/plot_GO_mean_adjacency_over_time_grouped_by_time_to_annot.py"
+
+rule compute_GO_time_to_annotation_and_mean_adjacency_correlation:
+    input:
+        mean_adj_dir = "work_folder/data/dates/GO/probability_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}",
+        annot_dates_dir = "work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}"
+    output:
+        global_stats = "work_folder/data/dates/GO/stats/tta_and_mean_adj_corr/{aspect}_depth_{depth}_cutoff_{cutoff}_spearman_correlation.csv"
+    script:
+        "../pyScripts/dates/GO/compute_GO_time_to_annotation_and_mean_adjacency_correlation.py"
+
+rule plot_GO_mean_adjacency_vs_time_to_annotation:
+    input:
+        mean_adj_dir = "work_folder/data/dates/GO/probability_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}",
+        annot_dates_dir = "work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}"
+    output:
+        plot_file = "work_folder/data/dates/GO/plots/tta_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/mean_adjacency_vs_time_to_annotation.png"
+    script:
+        "../pyScripts/plotting/plot_GO_mean_adjacency_vs_time_to_annotation.py"
+
+rule plot_GO_mean_adjacency_distribution_for_various_thresholds:
+    input:
+        mean_adj_dir = "work_folder/data/dates/GO/probability_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}",
+        annot_dates_dir = "work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}"
+    output:
+        plot_file = "work_folder/data/dates/GO/plots/tta_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/mean_adjacency_distribution_multiple_thresholds.pdf"
+    script:
+        "../pyScripts/plotting/plot_GO_mean_adjacency_distribution_for_various_thresholds.py"

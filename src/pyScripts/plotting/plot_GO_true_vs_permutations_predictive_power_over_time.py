@@ -29,30 +29,34 @@ true_line = df_daily_mean['PID0_mean_adj']
 perm_cols = [col for col in df_daily_mean.columns if col.startswith('PID') and col != 'PID0_mean_adj']
 perm_data = df_daily_mean[perm_cols]
 
-print(f"[{term}] [MATH] Calculating 95% Confidence Intervals across {len(perm_cols)} permutations...")
+print(f"[{term}] [MATH] Calculating the 95% spread across {len(perm_cols)} permutations...")
 
-# Calculate the mean and the 95% bounds of the random permutations for the shaded area
+# 1. The Mean
 perm_mean = perm_data.mean(axis=1)
-perm_lower = perm_data.quantile(0.025, axis=1) # 2.5% percentile
-perm_upper = perm_data.quantile(0.975, axis=1) # 97.5% percentile
+
+# 2. The 95% Percentile Interval (PI) -> The spread of the raw data
+perm_pi_lower = perm_data.quantile(0.025, axis=1)
+perm_pi_upper = perm_data.quantile(0.975, axis=1)
 
 # Plotting
 print(f"[{term}] [PLOT] Drawing the visualization...")
 plt.figure(figsize=(12, 6))
 
-# Plot the 1000 Permutations (Mean + Shaded CI)
-plt.plot(perm_mean.index, perm_mean, label='Random Permutations (Mean)', color='gray', linestyle='--', linewidth=2)
+# Plot the 95% Spread (Light band representing where 95% of the permutations fall)
 plt.fill_between(
     perm_mean.index, 
-    perm_lower, 
-    perm_upper, 
-    color='gray', 
-    alpha=0.3, 
-    label='Permutations 95% CI'
+    perm_pi_lower, 
+    perm_pi_upper, 
+    color='lightgray', 
+    alpha=0.6, 
+    label='95% Permutation Spread'
 )
 
-# Plot the True Annotations (PID0) on top
-plt.plot(true_line.index, true_line, label='True Annotations', color='crimson', linewidth=2.5, marker='o', markersize=4)
+# Plot the Mean Line (Dashed) - Thin linewidth
+plt.plot(perm_mean.index, perm_mean, label='Random Permutations (Mean)', color='gray', linestyle='--', linewidth=1.5)
+
+# Plot the True Annotations (PID0) on top - Back to crimson, markers removed for a clean line
+plt.plot(true_line.index, true_line, label='True Annotations', color='crimson', linewidth=1.8)
 
 # Formatting
 plt.title(f"Predictive Power Over Time: True Annotations vs. Random Permutations\nTerm: {term}", fontsize=14, pad=15)
