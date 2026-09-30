@@ -20,6 +20,9 @@ include: "src/smkFiles/GOAnnotationDates.smk"
 include: "src/smkFiles/HDOAnnotationDates.smk"
 include: "src/smkFiles/PresentationPlots.smk"
 include: "src/smkFiles/GOAnnotationsPrediction.smk"
+include: "src/smkFiles/GOAnnotationsPredictionAlternative.smk"
+include: "src/smkFiles/HDOAnnotationDatesNew.smk"
+include: "src/smkFiles/Covariates.smk"
 
 ASPECTS = ["BP", "CC", "MF"]
 TEMPORAL_MATRICES_ASPECTS = ["BP"]
@@ -397,18 +400,75 @@ rule all:
                aspect = ASPECTS),
 
         # --- MASTER MATRICES COMPUTATION ---
-        get_all_GO_master_matrices,
-        get_all_GO_mean_adjacencies,
-        get_all_GO_true_annotated_genes_quantiles,
-        get_all_GO_true_annotated_genes_quantiles_over_time,
-        get_all_GO_true_vs_permutations_predictive_power_over_time,
-        get_all_GO_mean_adjacency_over_time_grouped_by_time_to_annot_plots,
-        expand("work_folder/data/dates/GO/stats/tta_and_mean_adj_corr/{aspect}_depth_{depth}_cutoff_{cutoff}_spearman_correlation.csv",
-               aspect = TEMPORAL_MATRICES_ASPECTS, depth = TEMPORAL_MATRICES_DEPTHS, cutoff = TEMPORAL_MATRICES_CUTOFFS),
-        expand("work_folder/data/dates/GO/plots/tta_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/mean_adjacency_vs_time_to_annotation.png",
-               aspect = TEMPORAL_MATRICES_ASPECTS, depth = TEMPORAL_MATRICES_DEPTHS, cutoff = TEMPORAL_MATRICES_CUTOFFS),
-        expand("work_folder/data/dates/GO/plots/tta_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/mean_adjacency_distribution_multiple_thresholds.pdf",
-               aspect = TEMPORAL_MATRICES_ASPECTS, depth = TEMPORAL_MATRICES_DEPTHS, cutoff = TEMPORAL_MATRICES_CUTOFFS),             
+        # get_all_GO_master_matrices,
+        # get_all_GO_mean_adjacencies,
+        # get_all_GO_true_annotated_genes_quantiles,
+        # get_all_GO_true_annotated_genes_quantiles_over_time,
+        # get_all_GO_true_vs_permutations_predictive_power_over_time,
+        # get_all_GO_mean_adjacency_over_time_grouped_by_time_to_annot_plots,
+        # expand("work_folder/data/dates/GO/stats/tta_and_mean_adj_corr/{aspect}_depth_{depth}_cutoff_{cutoff}_spearman_correlation.csv",
+        #        aspect = TEMPORAL_MATRICES_ASPECTS, depth = TEMPORAL_MATRICES_DEPTHS, cutoff = TEMPORAL_MATRICES_CUTOFFS),
+        # expand("work_folder/data/dates/GO/plots/tta_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/mean_adjacency_vs_time_to_annotation.png",
+        #        aspect = TEMPORAL_MATRICES_ASPECTS, depth = TEMPORAL_MATRICES_DEPTHS, cutoff = TEMPORAL_MATRICES_CUTOFFS),
+        # expand("work_folder/data/dates/GO/plots/tta_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/mean_adjacency_distribution_multiple_thresholds.pdf",
+        #        aspect = TEMPORAL_MATRICES_ASPECTS, depth = TEMPORAL_MATRICES_DEPTHS, cutoff = TEMPORAL_MATRICES_CUTOFFS),
+        # get_all_GO_true_annotated_single_genes_quantiles,
+        # get_all_GO_true_annotated_single_genes_quantiles_over_time,
+        # expand("work_folder/data/dates/GO/plots/single_genes_quantiles/quantiles_vs_tta/{aspect}_depth_{depth}_cutoff_{cutoff}/single_genes_quantiles_vs_time_to_annotation.png",
+        #        aspect = TEMPORAL_MATRICES_ASPECTS, depth = TEMPORAL_MATRICES_DEPTHS, cutoff = TEMPORAL_MATRICES_CUTOFFS),
+        # get_all_GO_cohort_quantiles_by_TTA,
+        # expand("work_folder/data/dates/GO/plots/cohort_tta_quantiles/quantiles_over_time/{aspect}_depth_{depth}_cutoff_{cutoff}/cohort_tta_quantiles_over_time.png",
+        #        aspect = TEMPORAL_MATRICES_ASPECTS, depth = TEMPORAL_MATRICES_DEPTHS, cutoff = TEMPORAL_MATRICES_CUTOFFS),
+        # get_all_GO_raw_tta,
+        # get_all_GO_raw_tta_distributions,
+
+        # --- GO EXACT-DEGREE MASTER MATRICES COMPUTATION ---
+        get_all_GO_master_temporal_matrices_exact_degree_match,
+        get_all_GO_mean_adjacencies_exact_degree_match,
+        get_all_GO_true_annotated_genes_quantiles_exact_degree_match,
+        get_all_GO_true_vs_permutations_predictive_power_over_time_exact_degree_match,
+        get_all_GO_true_annotated_genes_quantiles_over_time_exact_degree_match,
+        get_all_GO_raw_tta_exact_degree_match,
+        get_all_GO_raw_tta_distributions_exact_degree_match,
+        expand("work_folder/data/dates/GO/plots/{aspect}_network_growth_over_time.png",
+               aspect = TEMPORAL_MATRICES_ASPECTS),
+        get_all_GO_mean_adjacency_vs_time_to_annotation_binned,
+        get_all_GO_quantile_vs_time_to_annotation_binned,
+        get_all_GO_binned_super_predictors_and_density,
+        get_all_GO_quantiles_vs_time_to_annotation_binned_sliding_window,
+        get_all_GO_quantile_vs_time_to_annotation_binned_by_tertiles,
+
+        # --- HDO ANNOTATIN DATES NEW SECTION ---
+        "work_folder/data/dates/HDO_new/CTD_genes_diseases.tsv",
+        "work_folder/data/dates/HDO_new/results/ancestors_map.pkl",
+        "work_folder/data/dates/HDO_new/results/doid_to_mesh_omim.json",
+        "work_folder/data/dates/HDO_new/results/leaf_pairs.csv",
+
+        # --- COVARIATES CHECK SECTION ---
+        "work_folder/data/dates/Covariates/BP_HDO_jaccard_overlap.tsv",
+        "work_folder/data/dates/Covariates/plots/check_en_model/BP_HDO_jaccard_heatmap.png",
+        "work_folder/data/dates/Covariates/check_en_model/confusion_matrix.parquet",
+        "work_folder/data/dates/Covariates/check_en_model/en_coefficients.csv",
+        "work_folder/data/dates/Covariates/plots/check_en_model/confusion_matrix_plot.png",
+        "work_folder/data/dates/Covariates/plots/check_en_model/en_coefficients_plot.png",
+        "work_folder/data/dates/Covariates/plots/check_en_model/heatmap.png",
+        "work_folder/data/dates/Covariates/feature_matrix/BPxHDO_feature_matrix.parquet",
+        "work_folder/data/dates/Covariates/feature_matrix/BPxHDO_parameters.parquet",
+        "work_folder/data/dates/Covariates/plots/feature_matrix/BPxHDO_counts_plot.png",
+        "work_folder/data/dates/Covariates/plots/feature_matrix/BPxHDO_genes_drop_plot.png",
+        "work_folder/data/dates/Covariates/feature_matrix/BPxHDO_dropped_genes_percentages.parquet",
+        "work_folder/data/dates/Covariates/elastic_net/coefficients/BPxHDO_coefficients.parquet",
+        "work_folder/data/dates/Covariates/elastic_net/metrics/BPxHDO_metrics.tsv",
+        "work_folder/data/dates/Covariates/elastic_net/models/BPxHDO_model.rds",
+        "work_folder/data/dates/Covariates/plots/elastic_net/BPxHDO_top20_coefficients",
+        "work_folder/data/dates/Covariates/plots/elastic_net/BPxHDO_alpha_metrics.png",
+        "work_folder/data/dates/Covariates/elastic_net/coefficients_w_n_annot/BPxHDO_coefficients.parquet",
+        "work_folder/data/dates/Covariates/elastic_net/metrics_w_n_annot/BPxHDO_metrics.tsv",
+        "work_folder/data/dates/Covariates/elastic_net/models_w_n_annot/BPxHDO_model.rds",
+        "work_folder/data/dates/Covariates/plots/elastic_net/BPxHDO_cv_curves_w_n_annot.pdf",
+        "work_folder/data/dates/Covariates/plots/elastic_net/BPxHDO_top20_coefficients_w_n_annot",
+        "work_folder/data/dates/Covariates/plots/elastic_net_w_n_annot/BPxHDO_alpha_metrics.png",
+        "work_folder/data/dates/Covariates/elastic_net/comparisons/BP",
 
         # --- PRESENTATION PLOTS SECTION ---
         expand("work_folder/data/presentation_plots/go_{aspect}_depth_5_cutoff_20_neighbor_sums.png",

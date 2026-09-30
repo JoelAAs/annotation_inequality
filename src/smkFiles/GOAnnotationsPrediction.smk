@@ -265,6 +265,83 @@ rule plot_GO_mean_adjacency_vs_time_to_annotation:
     script:
         "../pyScripts/plotting/plot_GO_mean_adjacency_vs_time_to_annotation.py"
 
+def get_all_GO_true_annotated_single_genes_quantiles(wildcards):
+    target_files = []
+    
+    for a in TEMPORAL_MATRICES_ASPECTS:
+        for d in TEMPORAL_MATRICES_DEPTHS:
+            for c in TEMPORAL_MATRICES_CUTOFFS:
+                annot_file = checkpoints.find_GO_nodes_with_top_5_annotations.get(
+                    aspect=a, depth=d, cutoff=c
+                ).output.nodes_with_top_5_annotations_pickle
+                
+                top_annot_df = pd.read_pickle(annot_file)
+                my_terms = [str(term).replace(":", "_") for term in top_annot_df['GO_id'].unique()]
+                
+                # ALL terms go straight into the best_predictions folder
+                target_files.extend(
+                    expand("work_folder/data/dates/GO/single_genes_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_single_genes_quantiles.parquet",
+                           aspect=a, depth=d, cutoff=c, term=my_terms)
+                )
+                
+    return target_files
+
+rule compute_GO_true_annotated_single_genes_quantiles:
+    input:
+        mean_adj_file = "work_folder/data/dates/GO/probability_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_mean_adjacencies.parquet"
+    output:
+        quantile_file = "work_folder/data/dates/GO/single_genes_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_single_genes_quantiles.parquet"
+    threads: 2
+    script:
+        "../pyScripts/dates/GO/compute_GO_true_annotated_single_genes_quantiles.py"
+
+rule plot_GO_single_genes_quantiles_vs_time_to_annotation:
+    input:
+        quantiles_dir = "work_folder/data/dates/GO/single_genes_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}",
+        annot_dates_dir = "work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}"
+    output:
+        plot_file = "work_folder/data/dates/GO/plots/single_genes_quantiles/quantiles_vs_tta/{aspect}_depth_{depth}_cutoff_{cutoff}/single_genes_quantiles_vs_time_to_annotation.png"
+    script:
+        "../pyScripts/plotting/plot_GO_single_genes_quantiles_vs_time_to_annotation.py"
+
+def get_all_GO_cohort_quantiles_by_TTA(wildcards):
+    target_files = []
+    
+    for a in TEMPORAL_MATRICES_ASPECTS:
+        for d in TEMPORAL_MATRICES_DEPTHS:
+            for c in TEMPORAL_MATRICES_CUTOFFS:
+                annot_file = checkpoints.find_GO_nodes_with_top_5_annotations.get(
+                    aspect=a, depth=d, cutoff=c
+                ).output.nodes_with_top_5_annotations_pickle
+                
+                top_annot_df = pd.read_pickle(annot_file)
+                my_terms = [str(term).replace(":", "_") for term in top_annot_df['GO_id'].unique()]
+                
+                # ALL terms go straight into the best_predictions folder
+                target_files.extend(
+                    expand("work_folder/data/dates/GO/cohort_tta_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_cohort_tta_quantiles.parquet",
+                           aspect=a, depth=d, cutoff=c, term=my_terms)
+                )
+                
+    return target_files
+
+rule compute_GO_cohort_quantiles_by_TTA:
+    input:
+        mean_adj_file = "work_folder/data/dates/GO/probability_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_mean_adjacencies.parquet",
+        annot_dates_file = "work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_first_annotation_dates.csv"
+    output:
+        quantile_file = "work_folder/data/dates/GO/cohort_tta_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_cohort_tta_quantiles.parquet"
+    script:
+        "../pyScripts/dates/GO/compute_GO_cohort_quantiles_by_TTA.py"
+
+rule plot_GO_cohort_quantiles_over_time:
+    input:
+        quantiles_dir = "work_folder/data/dates/GO/cohort_tta_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}"
+    output:
+        plot_file = "work_folder/data/dates/GO/plots/cohort_tta_quantiles/quantiles_over_time/{aspect}_depth_{depth}_cutoff_{cutoff}/cohort_tta_quantiles_over_time.png"
+    script:
+        "../pyScripts/plotting/plot_GO_cohort_quantiles_over_time.py"
+
 rule plot_GO_mean_adjacency_distribution_for_various_thresholds:
     input:
         mean_adj_dir = "work_folder/data/dates/GO/probability_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}",
@@ -273,3 +350,121 @@ rule plot_GO_mean_adjacency_distribution_for_various_thresholds:
         plot_file = "work_folder/data/dates/GO/plots/tta_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/mean_adjacency_distribution_multiple_thresholds.pdf"
     script:
         "../pyScripts/plotting/plot_GO_mean_adjacency_distribution_for_various_thresholds.py"
+
+def get_all_GO_true_annotated_single_genes_quantiles_over_time(wildcards):
+    target_files = []
+    
+    for a in TEMPORAL_MATRICES_ASPECTS:
+        for d in TEMPORAL_MATRICES_DEPTHS:
+            for c in TEMPORAL_MATRICES_CUTOFFS:
+                annot_file = checkpoints.find_GO_nodes_with_top_5_annotations.get(
+                    aspect=a, depth=d, cutoff=c
+                ).output.nodes_with_top_5_annotations_pickle
+                
+                top_annot_df = pd.read_pickle(annot_file)
+                my_terms = [str(term).replace(":", "_") for term in top_annot_df['GO_id'].unique()]
+                
+                # ALL terms go straight into the best_predictions folder
+                target_files.extend(
+                    expand("work_folder/data/dates/GO/plots/single_genes_quantiles/quantiles_over_time/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_single_genes_quantiles_over_time.png",
+                           aspect=a, depth=d, cutoff=c, term=my_terms)
+                )
+                
+    return target_files
+
+rule plot_GO_true_annotated_single_genes_quantiles_over_time:
+    input:
+        quantile_file = "work_folder/data/dates/GO/single_genes_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_single_genes_quantiles.parquet"
+    output:
+        plot_file = "work_folder/data/dates/GO/plots/single_genes_quantiles/quantiles_over_time/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_single_genes_quantiles_over_time.png"
+    script:
+        "../pyScripts/plotting/plot_GO_true_annotated_single_genes_quantiles_over_time.py"
+
+'''def get_all_GO_sliding_window_tta_quantiles(wildcards):
+    target_files = []
+    
+    for a in TEMPORAL_MATRICES_ASPECTS:
+        for d in TEMPORAL_MATRICES_DEPTHS:
+            for c in TEMPORAL_MATRICES_CUTOFFS:
+                annot_file = checkpoints.find_GO_nodes_with_top_5_annotations.get(
+                    aspect=a, depth=d, cutoff=c
+                ).output.nodes_with_top_5_annotations_pickle
+                
+                top_annot_df = pd.read_pickle(annot_file)
+                my_terms = [str(term).replace(":", "_") for term in top_annot_df['GO_id'].unique()]
+                
+                # ALL terms go straight into the best_predictions folder
+                target_files.extend(
+                    expand("work_folder/data/dates/GO/sliding_window_tta_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_sliding_window_tta_quantiles.parquet",
+                           aspect=a, depth=d, cutoff=c, term=my_terms)
+                )
+                
+    return target_files
+
+rule compute_GO_sliding_window_tta_quantiles:
+    input:
+        mean_adj_file = "work_folder/data/dates/GO/probability_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_mean_adjacencies.parquet",
+        annot_dates_file = "work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_first_annotation_dates.csv"
+    output:
+        quantile_file = "work_folder/data/dates/GO/sliding_window_tta_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_sliding_window_tta_quantiles.parquet"
+    script:
+        "../pyScripts/dates/GO/compute_GO_sliding_window_tta_quantiles.py"'''
+
+def get_all_GO_raw_tta(wildcards):
+    target_files = []
+    
+    for a in TEMPORAL_MATRICES_ASPECTS:
+        for d in TEMPORAL_MATRICES_DEPTHS:
+            for c in TEMPORAL_MATRICES_CUTOFFS:
+                annot_file = checkpoints.find_GO_nodes_with_top_5_annotations.get(
+                    aspect=a, depth=d, cutoff=c
+                ).output.nodes_with_top_5_annotations_pickle
+                
+                top_annot_df = pd.read_pickle(annot_file)
+                my_terms = [str(term).replace(":", "_") for term in top_annot_df['GO_id'].unique()]
+                
+                # ALL terms go straight into the best_predictions folder
+                target_files.extend(
+                    expand("work_folder/data/dates/GO/raw_tta/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_raw_tta.parquet",
+                           aspect=a, depth=d, cutoff=c, term=my_terms)
+                )
+                
+    return target_files
+
+rule extract_GO_raw_tta:
+    input:
+        mean_adj_file = "work_folder/data/dates/GO/probability_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_mean_adjacencies.parquet",
+        annot_dates_file = "work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_first_annotation_dates.csv"
+    output:
+        raw_tta_file = "work_folder/data/dates/GO/raw_tta/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_raw_tta.parquet"
+    script:
+        "../pyScripts/dates/GO/extract_GO_raw_tta.py"
+
+def get_all_GO_raw_tta_distributions(wildcards):
+    target_files = []
+    
+    for a in TEMPORAL_MATRICES_ASPECTS:
+        for d in TEMPORAL_MATRICES_DEPTHS:
+            for c in TEMPORAL_MATRICES_CUTOFFS:
+                annot_file = checkpoints.find_GO_nodes_with_top_5_annotations.get(
+                    aspect=a, depth=d, cutoff=c
+                ).output.nodes_with_top_5_annotations_pickle
+                
+                top_annot_df = pd.read_pickle(annot_file)
+                my_terms = [str(term).replace(":", "_") for term in top_annot_df['GO_id'].unique()]
+                
+                # ALL terms go straight into the best_predictions folder
+                target_files.extend(
+                    expand("work_folder/data/dates/GO/plots/raw_tta/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_raw_tta_distribution.png",
+                           aspect=a, depth=d, cutoff=c, term=my_terms)
+                )
+                
+    return target_files
+
+rule plot_GO_raw_tta_distributions:
+    input:
+        raw_tta_file = "work_folder/data/dates/GO/raw_tta/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_raw_tta.parquet"
+    output:
+        plot_file = "work_folder/data/dates/GO/plots/raw_tta/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_raw_tta_distribution.png"
+    script:
+        "../pyScripts/plotting/plot_GO_raw_tta_distributions.py"

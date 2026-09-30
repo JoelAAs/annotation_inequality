@@ -11,24 +11,26 @@ print(f"\n--- [Core] Computing Quantiles for {term} ---\n", flush=True)
 # Load the master mean adjacency matrix
 df = pd.read_parquet(input_file)
 
-# Isolate the true values (1D array)
-true_values = df['PID0_mean_adj'].values
+# Remove the "Future_Gene" column
+df = df.drop('Future_Gene', axis=1)
 
-# Isolate the 1,000 decoy permutations (2D matrix)
-decoy_cols = [f"PID{i}_mean_adj" for i in range(1, 1001)]
-decoy_matrix = df[decoy_cols].values
+# Group by date to get the global temporal signal
+df = df.groupby('Date', as_index=False).mean()
 
-# QUANTILE COMPUTATION
-# For every row, how many decoys are < the true value? (We could also do <= but there will be a lot of 1s)
-# Should we filter out where there are many 0s?
-quantiles = (decoy_matrix < true_values[:, None]).sum(axis=1) / 1000.0
+# Isolate columns dynamically
+true_col = 'PID0_mean_adj'
+decoy_cols = [c for c in df.columns if c.startswith('PID') and c != true_col]
+n_decoys = len(decoy_cols)
+
+# QUANTILE COMPUTATION (Vectorized with Pseudo-Count)
+# We add +1 to both numerator and denominator per to include the "true" observation (Laplace correction)
+df['quantile'] = (df[decoy_cols].lt(df[true_col], axis=0).sum(axis=1) + 1) / (n_decoys + 1)
 
 # Final dataframe
 results_df = pd.DataFrame({
     'Date': df['Date'],
-    'Future_Gene': df['Future_Gene'],
-    'True_Mean_Adj': true_values.astype(np.float32), 
-    'Quantile': quantiles.astype(np.float32)
+    'True_Mean_Adj': df[true_col].astype(np.float32), 
+    'Quantile': df['quantile'].astype(np.float32)
 })
 
 # Save the resulting quantiles

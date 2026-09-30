@@ -69,3 +69,11 @@ rule plot_GO_bp_publications_network_node_degree_distribution:
         plot_file = "work_folder/data/presentation_plots/bp_publications_network_node_degree_distribution.png"
     script:
         "../pyScripts/presentation_plots/plot_GO_bp_publications_network_node_degree_distribution.py"
+
+rule plot_GO_true_predictive_power_over_time:
+    input:
+        mean_adj_file = "work_folder/data/dates/GO/ed_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_mean_adjacencies.parquet"
+    output:
+        plot_file = "work_folder/data/presentation_plots/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_true_predictive_power.png"
+    script:
+        "../pyScripts/presentation_plots/plot_GO_true_predictive_power_over_time.py"

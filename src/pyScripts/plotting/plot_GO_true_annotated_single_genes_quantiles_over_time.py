@@ -8,7 +8,7 @@ output_file = snakemake.output.plot_file
 term = snakemake.wildcards.term
 
 start_time = time.time()
-print(f"--- [{term}] Starting temporal quantile plotting ---")
+print(f"--- [{term}] Starting temporal single-gene quantile plotting ---")
 print(f"[{term}] [LOAD] Reading data from {input_file}...")
 
 df = pd.read_parquet(input_file)
@@ -18,20 +18,23 @@ print(f"[{term}] [PROCESS] Formatting dates...")
 
 # Date formating
 df['Date'] = pd.to_datetime(df['Date'].astype(str), format='%Y%m%d')
+df = df.sort_values('Date')
+unique_dates = df['Date'].nunique()
+
+print(f"[{term}] [PLOT] Aggregating {unique_dates} unique dates for lineplot...")
 
 plt.figure(figsize=(12, 6))
 
 # sns.lineplot automatically aggregates the multiple Future_Gene quantiles per Date
+# It plots the mean as a line and shades the 95% Confidence Interval
 sns.lineplot(
     data=df, 
     x='Date', 
     y='Quantile', 
     linewidth=1.8,
-    color='royalblue'
+    color='royalblue',
+    errorbar=('ci', 95)
 )
-
-plt.axhline(y=0.95, color='red', linestyle='--', linewidth=1.5, label='95th Percentile Threshold')
-plt.legend(loc='lower right')
 
 plt.title(f"Predictive Quantile of True Annotated Genes Over Time\nTerm: {term}", fontsize=14, pad=15)
 plt.xlabel("Date", fontsize=12)

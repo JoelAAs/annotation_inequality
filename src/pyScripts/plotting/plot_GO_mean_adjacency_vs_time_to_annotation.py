@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import time
 from scipy.stats import binned_statistic
+import itertools
 
 adj_dir = Path(snakemake.input.mean_adj_dir)
 dates_dir = Path(snakemake.input.annot_dates_dir)
@@ -11,7 +12,7 @@ output_plot = snakemake.output.plot_file
 aspect = snakemake.wildcards.aspect
 
 start_time = time.time()
-print(f"--- [GLOBAL {aspect.upper()}] Plotting Individual Term Trajectories ---")
+print(f"--- [GLOBAL {aspect.upper()}] Plotting Individual Term Trajectories (6-Month Bins, Cool Colors, Legend) ---")
 
 # Setup the figure for presentation
 plt.figure(figsize=(14, 8))
@@ -23,7 +24,11 @@ global_y = []
 adj_files = list(adj_dir.glob("*_mean_adjacencies.parquet"))
 print(f"Processing {len(adj_files)} terms...")
 
-lines_plotted = 0
+# Extract Tab20 colors and strictly KEEP only Blues, Greens, Purples, Grays, and Cyans
+# Indices: 0,1 (Blue), 4,5 (Green), 8,9 (Purple), 14,15 (Gray), 18,19 (Cyan)
+tab20 = plt.get_cmap('tab20').colors
+safe_colors = [tab20[i] for i in [0, 1, 4, 5, 8, 9, 14, 15, 18, 19]]
+color_cycle = itertools.cycle(safe_colors)
 
 for adj_file in adj_files:
     term_str = adj_file.name.replace("_mean_adjacencies.parquet", "")
@@ -56,8 +61,8 @@ for adj_file in adj_files:
     global_x.extend(df['Delta_T_years'])
     global_y.extend(df['PID0_mean_adj'])
     
-    # CALCULATE THE TRENDLINE FOR THIS SPECIFIC TERM
-    bins = np.arange(0, np.ceil(df['Delta_T_years'].max()) + 1, 1)
+    # CALCULATE THE TRENDLINE FOR THIS SPECIFIC TERM (0.5 = 6 months)
+    bins = np.arange(0, np.ceil(df['Delta_T_years'].max()) + 1, 0.5)
     bin_means, bin_edges, _ = binned_statistic(
         df['Delta_T_years'], df['PID0_mean_adj'], statistic='mean', bins=bins
     )
@@ -67,23 +72,22 @@ for adj_file in adj_files:
     
     # Only plot if this term has enough data to form a line (at least 2 points)
     if valid_bins.sum() > 1:
-        # Layer 1: Plot this individual term (zorder=1, highly transparent)
+        # Layer 1: Plot this individual term with a safe cool color
+        term_color = next(color_cycle)
         plt.plot(
             bin_centers[valid_bins], 
             bin_means[valid_bins], 
-            color='#0571b0', 
+            color=term_color, 
             linewidth=1.5, 
-            alpha=0.2,
-            zorder=1
+            alpha=0.4,  
+            zorder=1,
+            label=term_str.replace('_', ':') # Add the formatted term ID to the legend
         )
-        lines_plotted += 1
 
-# Add a dummy line for the legend so the audience knows what the faint lines are
-plt.plot([], [], color='#0571b0', linewidth=2.0, alpha=0.5, label='Individual GO Terms')
 
 # Layer 2: Plot the Global Average on top to anchor the visual (zorder=2)
 if len(global_x) > 0:
-    global_bins = np.arange(0, np.ceil(max(global_x)) + 1, 1)
+    global_bins = np.arange(0, np.ceil(max(global_x)) + 1, 0.5)
     global_means, global_edges, _ = binned_statistic(
         global_x, global_y, statistic='mean', bins=global_bins
     )
@@ -93,15 +97,15 @@ if len(global_x) > 0:
     plt.plot(
         global_centers[valid_global], 
         global_means[valid_global], 
-        color='#d73027', 
-        linewidth=4.0, 
+        color='#d73027',  # The distinct red line
+        linewidth=5.0, 
         label='Global Average Trend',
         zorder=2
     )
 
 # Formatting
-plt.title(f"Term-by-Term Network Predictive Power\nGO Aspect: {aspect.upper()}", fontsize=28, fontweight='bold', pad=20)
-plt.xlabel("Time to Annotation ($\Delta$T in Years)", fontsize=22, labelpad=15)
+plt.title(f"Term-by-Term Network Mean Adjacency Score vs TTA\nGO Aspect: {aspect.upper()}", fontsize=28, fontweight='bold', pad=20)
+plt.xlabel("Time to Annotation ($\\Delta$T in Years)", fontsize=22, labelpad=15)
 plt.ylabel("Mean Adjacency Score", fontsize=22, labelpad=15)
 
 plt.xticks(fontsize=18)
@@ -110,22 +114,38 @@ plt.yticks(fontsize=18)
 # Presentation Grid (zorder=0)
 plt.grid(True, linestyle="--", alpha=0.4, zorder=0)
 
-# Statistics Box
-stats_text = f"Total Pathways Plotted: {lines_plotted:,}"
-plt.text(
-    0.95, 0.95, stats_text, 
-    transform=plt.gca().transAxes,
-    fontsize=20, verticalalignment='top', horizontalalignment='right',
-    bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.9, edgecolor='#cccccc'),
-    zorder=3
-)
+# Legend (Positioned outside the plot to the right in one column)
+num_terms = len(adj_files)
 
-# Legend
-plt.legend(fontsize=18, loc='upper right', bbox_to_anchor=(0.95, 0.82), framealpha=0.9)
-plt.tight_layout()
+if num_terms <= 20:
+    # Normal behavior when only few terms
+    cols = 1
+elif num_terms <= 40:
+    # Double columns
+    cols = 2
+else:
+    # Remove labels if there are too many terms, showing only the global mean
+    cols = 1
+    handles, labels = plt.gca().get_legend_handles_labels()
+    # Keep only the global average
+    handles = [h for h, l in zip(handles, labels) if l == 'Global Average Trend']
+    labels = ['Global Average Trend']
+    plt.legend(handles, labels, loc="upper left", bbox_to_anchor=(1.02, 1), fontsize=12)
+
+# If we didn't deactivate the legend, then build it with the correct number of columns
+if num_terms <= 40:
+    plt.legend(
+        loc="upper left", 
+        bbox_to_anchor=(1.02, 1), 
+        fontsize=10, 
+        ncol=cols, 
+        framealpha=0.9, 
+        edgecolor='#cccccc'
+    )
 
 # Save
 print(f"Saving spaghetti plot to {output_plot}...")
+# bbox_inches='tight' is crucial so the external legend isn't cut off
 plt.savefig(output_plot, dpi=300, bbox_inches='tight')
 plt.close()
 

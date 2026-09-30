@@ -21,17 +21,15 @@ for file in sorted(parquet_files):
     date_int = int(date_str)
     
     file_path = os.path.join(matrix_dir, file)
+    
+    # 1. READ FLAT PARQUET 
     df = pd.read_parquet(file_path)
     
-    # COMPUTE MEANS
-    # Group by Permutation_ID (0 to 1000) and calculate the mean probabilities
-    mean_df = df.groupby(level='Permutation_ID').mean()
-    
-    # RESHAPE
-    # Drop the 'Status' level from the columns (Future_Target) so it's just Gene IDs
-    if isinstance(mean_df.columns, pd.MultiIndex):
-        mean_df.columns = mean_df.columns.get_level_values('Target_ID')
-        
+    # 2. COMPUTE MEANS
+    # Remove Gene_ID and group by Permutation_ID
+    mean_df = df.drop(columns=['Gene_ID']).groupby('Permutation_ID').mean()
+
+    # 3. RESHAPE
     # Transpose the dataframe: Future_Genes become rows, Permutations become columns
     transposed_df = mean_df.T
     
@@ -69,7 +67,7 @@ final_df['Future_Gene'] = pd.to_numeric(final_df['Future_Gene'])
 # Sort chronologically by Date, then numerically by Future_Gene
 final_df = final_df.sort_values(by=['Date', 'Future_Gene']).reset_index(drop=True)
 
-# FIX: Downcast to float32 instead of float16 to prevent tiny probabilities from becoming 0.0
+# FIX: Downcast to float32 explicitly
 float_cols = [c for c in final_df.columns if c.startswith('PID')]
 final_df[float_cols] = final_df[float_cols].astype(np.float32)
 

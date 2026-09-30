@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import spearmanr
+from statsmodels.stats.multitest import multipletests
 from pathlib import Path
 import time
 
@@ -68,11 +69,25 @@ for adj_file in adj_files:
 print(f"Processing complete. Compiling master table...")
 results_df = pd.DataFrame(results)
 
-# Drop terms that failed the N>=12 check, and sort from most negative correlation to least
-results_df = results_df.dropna(subset=['Spearman_rho']).sort_values('GO_id')
+# Drop terms that failed the N>=12 check (NaN values)
+results_df = results_df.dropna(subset=['Spearman_rho'])
+
+# Calculate FDR and Sort
+if not results_df.empty:
+    # Calculate FDR (Benjamini-Hochberg)
+    _, fdr_values, _, _ = multipletests(results_df['p_value'], method='fdr_bh')
+    results_df['FDR'] = fdr_values
+    
+    # Sort from most negative correlation to least
+    results_df = results_df.sort_values('Spearman_rho')
+else:
+    print("Warning: No valid data left after filtering for N >= 12.")
+    results_df['FDR'] = []
 
 # Save as CSV
 print(f"Saving master table to {output_file}...")
+output_path = Path(output_file)
+output_path.parent.mkdir(parents=True, exist_ok=True) # Ensure output directory exists
 results_df.to_csv(output_file, sep='\t', index=False)
 
 elapsed_time = round(time.time() - start_time, 2)

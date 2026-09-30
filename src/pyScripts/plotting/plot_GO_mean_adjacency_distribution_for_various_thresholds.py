@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
+from scipy.stats import mannwhitneyu
 from pathlib import Path
 import time
 import warnings
@@ -74,27 +75,47 @@ with PdfPages(output_pdf) as pdf:
             f'> {label}'
         )
         
-        # Calculate Fold Changes for the X-axis labels
+        # Calculate Fold Changes and Mann-Whitney U Test
         fc_labels = []
         go_terms = sorted(page_df['GO_Term'].unique())
         
         for term in go_terms:
             subset = page_df[page_df['GO_Term'] == term]
-            mean_short = subset[subset['Condition'] == f'≤ {label}']['PID0_mean_adj'].mean()
-            mean_long = subset[subset['Condition'] == f'> {label}']['PID0_mean_adj'].mean()
+            short_data = subset[subset['Condition'] == f'≤ {label}']['PID0_mean_adj']
+            long_data = subset[subset['Condition'] == f'> {label}']['PID0_mean_adj']
+            
+            mean_short = short_data.mean()
+            mean_long = long_data.mean()
             
             # Failsafe for missing data or zero division
             if pd.isna(mean_short) or pd.isna(mean_long) or mean_long == 0:
-                fc_labels.append(f"{term}\n(FC: N/A)")
+                fc_labels.append(f"{term}\nFC: N/A\np = N/A")
+                continue
+                
+            fc = mean_short / mean_long
+            
+            # Wilcoxon (Mann-Whitney U) Test
+            if len(short_data) >= 3 and len(long_data) >= 3:
+                stat, p_val = mannwhitneyu(short_data, long_data, alternative='two-sided')
+                
+                # Format the p-value
+                if p_val < 0.001:
+                    p_str = "p < 0.001 ***"
+                elif p_val < 0.01:
+                    p_str = f"p = {p_val:.3f} **"
+                elif p_val < 0.05:
+                    p_str = f"p = {p_val:.3f} *"
+                else:
+                    p_str = f"p = {p_val:.2f} (ns)"
             else:
-                fc = mean_short / mean_long
-                fc_labels.append(f"{term}\n(FC: {fc:.2f}x)")
+                p_str = "p = N/A"
+                
+            fc_labels.append(f"{term}\nFC: {fc:.2f}x\n{p_str}")
         
         # -- DRAW PLOT --
         plt.figure(figsize=(16, 9))
         sns.set_theme(style="whitegrid")
         
-        # Exact color match to your reference
         palette = {f'≤ {label}': '#ea7373', f'> {label}': '#7cb3e8'}
         
         ax = sns.violinplot(
@@ -106,7 +127,8 @@ with PdfPages(output_pdf) as pdf:
             inner="quartile",
             palette=palette,
             linewidth=1.2,
-            cut=0, # Hard stop KDE at 0 (probabilities can't be negative)
+            cut=0, 
+            bw_adjust=0.5, 
             order=go_terms
         )
         
@@ -118,10 +140,11 @@ with PdfPages(output_pdf) as pdf:
         ax.set_xticklabels(fc_labels, fontsize=14)
         plt.yticks(fontsize=14)
         
-        # Dynamic Y-Limit to zoom in slightly, clipping the extreme 0.5% outliers for visual clarity
-        y_max = page_df['PID0_mean_adj'].quantile(0.995)
-        if not pd.isna(y_max):
-            plt.ylim(-0.00005, y_max)
+        # Dynamic Y-Limit
+        y_max = page_df['PID0_mean_adj'].quantile(0.98)
+        
+        if not pd.isna(y_max) and y_max > 0:
+            plt.ylim(-(y_max * 0.05), y_max + (y_max * 0.05))
             
         plt.legend(title='Time to Annotation', fontsize=14, title_fontsize=16, loc='upper right')
         
