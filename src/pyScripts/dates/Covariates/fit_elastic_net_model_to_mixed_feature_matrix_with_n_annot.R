@@ -38,13 +38,10 @@ if (identical(compare_alphas_raw, "all")) {
   compare_alphas <- as.numeric(compare_alphas_raw)
 }
 
-# Poisson deviance and deviance explained on new data
-pois_dev <- function(y, mu) {
-  mu <- pmax(mu, 1e-10)
-  2 * sum(ifelse(y > 0, y * log(y / mu), 0) - (y - mu))
-}
+# Gaussian deviance (residual sum of squares) and deviance explained on new data
+gauss_dev <- function(y, mu) sum((y - mu)^2)
 dev_explained <- function(y_new, mu_new, mu_null) {
-  1 - pois_dev(y_new, mu_new) / pois_dev(y_new, rep(mu_null, length(y_new)))
+  1 - gauss_dev(y_new, mu_new) / gauss_dev(y_new, rep(mu_null, length(y_new)))
 }
 
 # Ontology classification from the term's name/ID.
@@ -54,7 +51,7 @@ get_ontology <- function(ids) {
          ifelse(grepl("^(DOID|HDO)", ids), "HDO", "OTHER"))
 }
 
-cat("--- [START] ELASTIC NET (POISSON) WITH GRID SEARCH, HOLD-OUT AND STABILITY ---\n")
+cat("--- [START] ELASTIC NET (GAUSSIAN ON LOG COUNT, TESTED GENES) WITH GRID SEARCH, HOLD-OUT AND STABILITY ---\n")
 
 # ---- Load data --------------------------------------------------------------
 cat("--- [RUNNING] LOADING DATA ---\n")
@@ -148,12 +145,26 @@ cat(sprintf("--- [INFO] Y: %d genes with count > 0, %d zeros (%.1f%%); max = %d;
             sum(y > 0), sum(y == 0), 100 * mean(y == 0), max(y),
             ifelse(any(y > 0), median(y[y > 0]), NA)))
 
-# ---- Stratified hold-out on y > 0 -------------------------------------------
+# ---- Restrict to tested genes (y > 0) and model log(y) -----------------------
+keep <- y > 0
+y <- log(y[keep])
+X_full <- X_full[keep, , drop = FALSE]
+if (use_covar) n_annot <- n_annot[keep]
+universe_genes <- universe_genes[keep]
+n_genes <- length(universe_genes)
+
+# Re-apply min_genes among tested genes only (n_annot is always kept)
+is_term <- colnames(X_full) != "n_annot"
+keep_cols <- !is_term | colSums(X_full) >= min_genes
+X_full <- X_full[, keep_cols, drop = FALSE]
+pen_factor <- pen_factor[keep_cols]
+cat(sprintf("--- [INFO] TESTED GENES ONLY: %d genes, %d terms with >= %d tested genes ---\n",
+            n_genes, sum(keep_cols & is_term), min_genes))
+
+# ---- Hold-out split ----------------------------------------------------------
 cat("--- [RUNNING] HOLD-OUT SPLIT ---\n")
 set.seed(seed)
-test_idx <- unlist(lapply(split(seq_len(n_genes), y > 0), function(ix) {
-  sample(ix, size = round(holdout_frac * length(ix)))
-}))
+test_idx <- sample(seq_len(n_genes), size = round(holdout_frac * n_genes))
 train_idx <- setdiff(seq_len(n_genes), test_idx)
 
 X_train <- X_full[train_idx, , drop = FALSE]; y_train <- y[train_idx]
@@ -170,7 +181,7 @@ foldid <- sample(rep(seq_len(n_folds), length.out = length(train_idx)))
 baseline <- NULL
 if (use_covar) {
   base_df <- data.frame(y = y_train, n_annot = n_annot[train_idx])
-  baseline <- glm(y ~ n_annot, data = base_df, family = poisson())
+  baseline <- glm(y ~ n_annot, data = base_df, family = gaussian())
   base_pred <- predict(baseline,
                        newdata = data.frame(n_annot = n_annot[test_idx]),
                        type = "response")
@@ -190,12 +201,12 @@ metrics_list <- list()
 # cv_fit$cvm[1] would NOT be the true null model here.
 cv_null <- mean(sapply(seq_len(n_folds), function(k) {
   tr <- foldid != k
-  pois_dev(y_train[!tr], rep(mean(y_train[tr]), sum(!tr))) / sum(!tr)
+  gauss_dev(y_train[!tr], rep(mean(y_train[tr]), sum(!tr))) / sum(!tr)
 }))
 
 for (alpha in alphas_to_test) {
   cat(sprintf("--- [INFO] TESTING ALPHA = %.2f ---\n", alpha))
-  cv_fit <- cv.glmnet(x = X_train, y = y_train, family = "poisson",
+  cv_fit <- cv.glmnet(x = X_train, y = y_train, family = "gaussian",
                       alpha = alpha, foldid = foldid,
                       penalty.factor = pen_factor, standardize = do_standard)
 
@@ -251,7 +262,7 @@ fit_alpha <- function(alpha_value) {
               alpha_value))
   set.seed(seed)
   foldid_all <- sample(rep(seq_len(n_folds), length.out = n_genes))
-  final_cv <- cv.glmnet(x = X_full, y = y, family = "poisson", alpha = alpha_value,
+  final_cv <- cv.glmnet(x = X_full, y = y, family = "gaussian", alpha = alpha_value,
                         foldid = foldid_all, penalty.factor = pen_factor,
                         standardize = do_standard)
 
@@ -268,7 +279,7 @@ fit_alpha <- function(alpha_value) {
       # path, convergence for family="poisson" is unreliable and can return
       # degenerate solutions (all coefficients zero). Let it compute the whole
       # sequence and interpolate the value at lambda.min via s=.
-      fit_b <- glmnet(X_full[idx, , drop = FALSE], y[idx], family = "poisson",
+      fit_b <- glmnet(X_full[idx, , drop = FALSE], y[idx], family = "gaussian",
                       alpha = alpha_value,
                       penalty.factor = pen_factor, standardize = do_standard)
       cb <- as.numeric(coef(fit_b, s = final_cv$lambda.min))[-1]
