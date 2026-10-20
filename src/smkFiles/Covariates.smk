@@ -60,25 +60,18 @@ rule obtain_mixed_feature_matrix_parameters:
     script:
         "../pyScripts/dates/Covariates/obtain_mixed_feature_matrix_parameters.py"
 
-rule fit_elastic_net_model_to_mixed_feature_matrix:
+rule fit_elastic_net_model_to_mixed_feature_matrix_old:
     input:
         feature_matrix = "work_folder/data/dates/Covariates/feature_matrix/{aspect}xHDO_feature_matrix.parquet",
         bait_usage = "work_folder/data/intact/bait_count.csv"
     output:
-        en_coefficients = "work_folder/data/dates/Covariates/elastic_net/coefficients/{aspect}xHDO_coefficients.parquet",
-        en_metrics = "work_folder/data/dates/Covariates/elastic_net/metrics/{aspect}xHDO_metrics.tsv",
-        en_model = "work_folder/data/dates/Covariates/elastic_net/models/{aspect}xHDO_model.rds",
-        cv_curves = "work_folder/data/dates/Covariates/plots/elastic_net/{aspect}xHDO_cv_curves.pdf"
+        en_coefficients = "work_folder/data/dates/Covariates/elastic_net_old/coefficients/{aspect}xHDO_coefficients.parquet",
+        en_metrics = "work_folder/data/dates/Covariates/elastic_net_old/metrics/{aspect}xHDO_metrics.tsv",
+        en_model = "work_folder/data/dates/Covariates/elastic_net_old/models/{aspect}xHDO_model.rds"
     params:
-        min_genes = 20,
-        holdout_frac = 0.20,
-        n_boot = 30,
-        use_annot_covariate = True,
-        standardize = True,
-        seed = 42,
-        compare_alphas = "all"
+        min_genes = 20
     script:
-        "../pyScripts/dates/Covariates/fit_elastic_net_model_to_mixed_feature_matrix.R"
+        "../pyScripts/dates/Covariates/fit_elastic_net_model_to_mixed_feature_matrix_old.R"
 
 rule fit_elastic_net_model_to_mixed_feature_matrix_with_n_annot:
     input:
@@ -91,46 +84,156 @@ rule fit_elastic_net_model_to_mixed_feature_matrix_with_n_annot:
         cv_curves = "work_folder/data/dates/Covariates/plots/elastic_net/{aspect}xHDO_cv_curves_w_n_annot.pdf"
     params:
         min_genes = 20,
-        holdout_frac = 0.20,
-        n_boot = 30,
         use_annot_covariate = True,
         standardize = True,
-        seed = 42,
-        compare_alphas = "all"
+        seed = 42
     script:
         "../pyScripts/dates/Covariates/fit_elastic_net_model_to_mixed_feature_matrix_with_n_annot.R"
 
+rule visualize_mixed_elastic_net_model_old:
+    input:
+        en_coefficients = "work_folder/data/dates/Covariates/elastic_net_old/coefficients/{aspect}xHDO_coefficients.parquet",
+        go_obo = "work_folder/data/GO/go-basic.obo",
+        hdo_obo = "work_folder/data/HDO/doid.obo"
+    output:
+        top20_plot = "work_folder/data/dates/Covariates/plots/elastic_net_old/{aspect}xHDO_top20_coefficients.png"
+    script:
+        "../pyScripts/plotting/visualize_mixed_elastic_net_model.py"
+
 rule visualize_mixed_elastic_net_model:
     input:
-        en_coefficients = "work_folder/data/dates/Covariates/elastic_net/coefficients/{aspect}xHDO_coefficients.parquet",
-        en_metrics = "work_folder/data/dates/Covariates/elastic_net/metrics/{aspect}xHDO_metrics.tsv",
-        go_obo = "work_folder/data/GO/go-basic.obo",
-        hdo_obo = "work_folder/data/HDO/doid.obo"
-    output:
-        top20_plot = directory("work_folder/data/dates/Covariates/plots/elastic_net/{aspect}xHDO_top20_coefficients"),
-        metrics_plot = "work_folder/data/dates/Covariates/plots/elastic_net/{aspect}xHDO_alpha_metrics.png"
-    script:
-        "../pyScripts/plotting/visualize_mixed_elastic_net_model.py"
-
-rule visualize_mixed_elastic_net_model_with_n_annot:
-    input:
         en_coefficients = "work_folder/data/dates/Covariates/elastic_net/coefficients_w_n_annot/{aspect}xHDO_coefficients.parquet",
-        en_metrics = "work_folder/data/dates/Covariates/elastic_net/metrics_w_n_annot/{aspect}xHDO_metrics.tsv",
         go_obo = "work_folder/data/GO/go-basic.obo",
         hdo_obo = "work_folder/data/HDO/doid.obo"
     output:
-        top20_plot = directory("work_folder/data/dates/Covariates/plots/elastic_net/{aspect}xHDO_top20_coefficients_w_n_annot"),
-        metrics_plot = "work_folder/data/dates/Covariates/plots/elastic_net_w_n_annot/{aspect}xHDO_alpha_metrics.png"
+        top20_plot = "work_folder/data/dates/Covariates/plots/elastic_net/{aspect}xHDO_top20_coefficients.png"
     script:
         "../pyScripts/plotting/visualize_mixed_elastic_net_model.py"
 
-rule compare_top_20_mixed_elastic_net_model_coefficients:
+rule fit_elastic_net_model_to_mixed_feature_matrix_depth_specific:
     input:
-        en_coefficients = "work_folder/data/dates/Covariates/elastic_net/coefficients/{aspect}xHDO_coefficients.parquet",
-        en_metrics = "work_folder/data/dates/Covariates/elastic_net/metrics/{aspect}xHDO_metrics.tsv",
+        feature_matrix_hdo = "work_folder/data/HDO/feature_matrices/full_feature_matrix_with_depth_5.csv",
+        feature_matrix_go = "work_folder/data/GO/feature_matrices/single_depth/{aspect}_depth_5_feature_matrix.csv",
+        bait_usage = "work_folder/data/intact/bait_count.csv"
+    output:
+        en_coefficients = "work_folder/data/dates/Covariates/elastic_net/coefficients_single_depth/{aspect}xHDO_coefficients.parquet",
+        en_metrics = "work_folder/data/dates/Covariates/elastic_net/metrics_single_depth/{aspect}xHDO_metrics.tsv",
+        en_model = "work_folder/data/dates/Covariates/elastic_net/models_single_depth/{aspect}xHDO_model.rds",
+        cv_curves = "work_folder/data/dates/Covariates/plots/elastic_net/{aspect}xHDO_cv_curves_single_depth.pdf"
+    params:
+        min_genes = 20,
+        use_annot_covariate = True,
+        standardize = True,
+        seed = 42
+    script:
+        "../pyScripts/dates/Covariates/fit_elastic_net_model_to_mixed_feature_matrix_single_depth.R"
+
+rule visualize_mixed_elastic_net_model_depth_specific:
+    input:
+        en_coefficients = "work_folder/data/dates/Covariates/elastic_net/coefficients_single_depth/{aspect}xHDO_coefficients.parquet",
         go_obo = "work_folder/data/GO/go-basic.obo",
         hdo_obo = "work_folder/data/HDO/doid.obo"
     output:
-        comparisons = directory("work_folder/data/dates/Covariates/elastic_net/comparisons/{aspect}")
+        top20_plot = "work_folder/data/dates/Covariates/plots/elastic_net_single_depth/{aspect}xHDO_top20_coefficients.png"
     script:
-        "../pyScripts/dates/Covariates/compare_top_20_mixed_elastic_net_model_coefficients.py"
+        "../pyScripts/plotting/visualize_mixed_elastic_net_model.py"
+
+rule fit_elastic_net_model_to_mixed_feature_matrix_with_n_annot_hdo_only:
+    input:
+        feature_matrix = "work_folder/data/HDO/feature_matrices/full_feature_matrix_with_depth_5.csv",
+        bait_usage = "work_folder/data/intact/bait_count.csv"
+    output:
+        en_coefficients = "work_folder/data/dates/Covariates/elastic_net/coefficients_hdo_only/HDO_coefficients.parquet",
+        en_metrics = "work_folder/data/dates/Covariates/elastic_net/metrics_hdo_only/HDO_metrics.tsv",
+        en_model = "work_folder/data/dates/Covariates/elastic_net/models_hdo_only/HDO_model.rds",
+        cv_curves = "work_folder/data/dates/Covariates/plots/elastic_net_hdo_only/HDO_cv_curves_w_n_annot.pdf"
+    params:
+        min_genes = 20,
+        use_annot_covariate = True,
+        standardize = True,
+        seed = 42
+    script:
+        "../pyScripts/dates/Covariates/fit_elastic_net_model_to_mixed_feature_matrix_with_n_annot_single_ontology.R"
+
+rule fit_elastic_net_model_to_mixed_feature_matrix_with_n_annot_go_only:
+    input:
+        feature_matrix = "work_folder/data/GO/feature_matrices/single_depth/{aspect}_depth_5_feature_matrix.csv",
+        bait_usage = "work_folder/data/intact/bait_count.csv"
+    output:
+        en_coefficients = "work_folder/data/dates/Covariates/elastic_net/coefficients_go_only/{aspect}_coefficients.parquet",
+        en_metrics = "work_folder/data/dates/Covariates/elastic_net/metrics_go_only/{aspect}_metrics.tsv",
+        en_model = "work_folder/data/dates/Covariates/elastic_net/models_go_only/{aspect}_model.rds",
+        cv_curves = "work_folder/data/dates/Covariates/plots/elastic_net_go_only/{aspect}_cv_curves_w_n_annot.pdf"
+    params:
+        min_genes = 20,
+        use_annot_covariate = True,
+        standardize = True,
+        seed = 42
+    script:
+        "../pyScripts/dates/Covariates/fit_elastic_net_model_to_mixed_feature_matrix_with_n_annot_single_ontology.R"
+
+rule visualize_mixed_elastic_net_model_hdo_only:
+    input:
+        en_coefficients = "work_folder/data/dates/Covariates/elastic_net/coefficients_hdo_only/HDO_coefficients.parquet",
+        go_obo = "work_folder/data/GO/go-basic.obo",
+        hdo_obo = "work_folder/data/HDO/doid.obo"
+    output:
+        top20_plot = "work_folder/data/dates/Covariates/plots/elastic_net_hdo_only/HDO_top20_coefficients.png"
+    script:
+        "../pyScripts/plotting/visualize_mixed_elastic_net_model.py"
+
+rule visualize_mixed_elastic_net_model_go_only:
+    input:
+        en_coefficients = "work_folder/data/dates/Covariates/elastic_net/coefficients_go_only/{aspect}_coefficients.parquet",
+        go_obo = "work_folder/data/GO/go-basic.obo",
+        hdo_obo = "work_folder/data/HDO/doid.obo"
+    output:
+        top20_plot = "work_folder/data/dates/Covariates/plots/elastic_net_go_only/{aspect}_top20_coefficients.png"
+    script:
+        "../pyScripts/plotting/visualize_mixed_elastic_net_model.py"
+
+rule test_en_model:
+    input:
+        feature_matrix = "work_folder/data/GO/feature_matrices/single_depth/{aspect}_depth_{depth}_feature_matrix.csv",
+        bait_usage = "work_folder/data/intact/bait_count.csv"
+    output:
+        single_depth_elastic_net_coefficients = "work_folder/data/dates/Covariates/elastic_net_test/{aspect}_depth_{depth}coefficients.parquet"
+    script:
+        "../pyScripts/dates/Covariates/test_en_model.py"
+
+rule visualize_test_en:
+    input:
+        en_coefficients = "work_folder/data/dates/Covariates/elastic_net_test/{aspect}_depth_{depth}coefficients.parquet",
+        go_obo = "work_folder/data/GO/go-basic.obo",
+        hdo_obo = "work_folder/data/HDO/doid.obo"
+    output:
+        top20_plot = "work_folder/data/dates/Covariates/plots/elastic_net_test/{aspect}_depth_{depth}_top20_coefficients.png"
+    script:
+        "../pyScripts/plotting/visualize_mixed_elastic_net_model.py"
+
+rule adapt_new_mixed_model_to_old_one:
+    input:
+        feature_matrix_hdo = "work_folder/data/HDO/feature_matrices/full_feature_matrix_with_depth_5.csv",
+        feature_matrix_go = "work_folder/data/GO/feature_matrices/single_depth/{aspect}_depth_5_feature_matrix.csv",
+        bait_usage = "work_folder/data/intact/bait_count.csv"
+    output:
+        en_coefficients = "work_folder/data/dates/Covariates/elastic_net/coefficients_adapted/{aspect}xHDO_coefficients.parquet",
+        en_metrics = "work_folder/data/dates/Covariates/elastic_net/metrics_adapted/{aspect}xHDO_metrics.tsv",
+        en_model = "work_folder/data/dates/Covariates/elastic_net/models_adapted/{aspect}xHDO_model.rds",
+        cv_curves = "work_folder/data/dates/Covariates/plots/elastic_net_adapted/{aspect}xHDO_cv_curves.pdf"
+    params:
+        min_genes = 20,
+        standardize = True,
+        seed = 42
+    script:
+        "../pyScripts/dates/Covariates/adapt_new_mixed_model_to_old_one.R"
+
+rule visualize_adapted_mixed_model:
+    input:
+        en_coefficients = "work_folder/data/dates/Covariates/elastic_net/coefficients_adapted/{aspect}xHDO_coefficients.parquet",
+        go_obo = "work_folder/data/GO/go-basic.obo",
+        hdo_obo = "work_folder/data/HDO/doid.obo"
+    output:
+        top20_plot = "work_folder/data/dates/Covariates/plots/elastic_net_adapted/{aspect}xHDO_top20_coefficients.png"
+    script:
+        "../pyScripts/plotting/visualize_mixed_elastic_net_model.py"

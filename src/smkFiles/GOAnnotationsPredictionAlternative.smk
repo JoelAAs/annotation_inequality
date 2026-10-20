@@ -150,7 +150,16 @@ rule plot_GO_quantiles_vs_time_to_annotation_binned_by_tertiles:
         plot_quantiles = "work_folder/data/dates/GO/plots/binned_tta_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_quantile_vs_time_to_annotation_binned_by_tertiles.png",
         plot_degrees = "work_folder/data/dates/GO/plots/binned_tta_quantiles/{aspect}_depth_{depth}_cutoff_{cutoff}/{term}_degree_vs_time_to_annotation_binned_by_tertiles.png"
     script:
-        "../pyScripts/plotting/plot_GO_quantiles_vs_time_to_annotation_binned_by_tertiles.py"        
+        "../pyScripts/plotting/plot_GO_quantiles_vs_time_to_annotation_binned_by_tertiles.py"
+
+rule plot_GO_quantiles_vs_time_to_annotation:
+    input:
+        mean_adj_dir = "work_folder/data/dates/GO/ed_mean_adjacencies/{aspect}_depth_{depth}_cutoff_{cutoff}",
+        annot_dates_dir = "work_folder/data/dates/GO/first_annotation_dates/{aspect}_depth_{depth}_cutoff_{cutoff}"
+    output:
+        plot_quantiles = "work_folder/data/dates/GO/plots/quantiles/quantiles_vs_tta/{aspect}_depth_{depth}_cutoff_{cutoff}/quantiles_vs_time_to_annotation.png"
+    script:
+        "../pyScripts/plotting/plot_GO_quantiles_vs_time_to_annotation.py"
 
 def get_all_GO_master_temporal_matrices_exact_degree_match(wildcards):
     target_folders = []

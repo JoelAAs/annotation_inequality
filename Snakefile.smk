@@ -23,11 +23,13 @@ include: "src/smkFiles/GOAnnotationsPrediction.smk"
 include: "src/smkFiles/GOAnnotationsPredictionAlternative.smk"
 include: "src/smkFiles/HDOAnnotationDatesNew.smk"
 include: "src/smkFiles/Covariates.smk"
+include: "src/smkFiles/GOPredictionFinal.smk"
 
 ASPECTS = ["BP", "CC", "MF"]
 TEMPORAL_MATRICES_ASPECTS = ["BP"]
 TEMPORAL_MATRICES_DEPTHS = [5]
 TEMPORAL_MATRICES_CUTOFFS = [20]
+WITH_OR_WITHOUT = ["without"]
 
 rule all:
     input:
@@ -438,12 +440,6 @@ rule all:
         get_all_GO_quantiles_vs_time_to_annotation_binned_sliding_window,
         get_all_GO_quantile_vs_time_to_annotation_binned_by_tertiles,
 
-        # --- HDO ANNOTATIN DATES NEW SECTION ---
-        "work_folder/data/dates/HDO_new/CTD_genes_diseases.tsv",
-        "work_folder/data/dates/HDO_new/results/ancestors_map.pkl",
-        "work_folder/data/dates/HDO_new/results/doid_to_mesh_omim.json",
-        "work_folder/data/dates/HDO_new/results/leaf_pairs.csv",
-
         # --- COVARIATES CHECK SECTION ---
         "work_folder/data/dates/Covariates/BP_HDO_jaccard_overlap.tsv",
         "work_folder/data/dates/Covariates/plots/check_en_model/BP_HDO_jaccard_heatmap.png",
@@ -457,18 +453,54 @@ rule all:
         "work_folder/data/dates/Covariates/plots/feature_matrix/BPxHDO_counts_plot.png",
         "work_folder/data/dates/Covariates/plots/feature_matrix/BPxHDO_genes_drop_plot.png",
         "work_folder/data/dates/Covariates/feature_matrix/BPxHDO_dropped_genes_percentages.parquet",
-        "work_folder/data/dates/Covariates/elastic_net/coefficients/BPxHDO_coefficients.parquet",
-        "work_folder/data/dates/Covariates/elastic_net/metrics/BPxHDO_metrics.tsv",
-        "work_folder/data/dates/Covariates/elastic_net/models/BPxHDO_model.rds",
-        "work_folder/data/dates/Covariates/plots/elastic_net/BPxHDO_top20_coefficients",
-        "work_folder/data/dates/Covariates/plots/elastic_net/BPxHDO_alpha_metrics.png",
         "work_folder/data/dates/Covariates/elastic_net/coefficients_w_n_annot/BPxHDO_coefficients.parquet",
         "work_folder/data/dates/Covariates/elastic_net/metrics_w_n_annot/BPxHDO_metrics.tsv",
         "work_folder/data/dates/Covariates/elastic_net/models_w_n_annot/BPxHDO_model.rds",
         "work_folder/data/dates/Covariates/plots/elastic_net/BPxHDO_cv_curves_w_n_annot.pdf",
-        "work_folder/data/dates/Covariates/plots/elastic_net/BPxHDO_top20_coefficients_w_n_annot",
-        "work_folder/data/dates/Covariates/plots/elastic_net_w_n_annot/BPxHDO_alpha_metrics.png",
-        "work_folder/data/dates/Covariates/elastic_net/comparisons/BP",
+        "work_folder/data/dates/Covariates/elastic_net_old/coefficients/BPxHDO_coefficients.parquet",
+        "work_folder/data/dates/Covariates/elastic_net_old/metrics/BPxHDO_metrics.tsv",
+        "work_folder/data/dates/Covariates/elastic_net_old/models/BPxHDO_model.rds",
+        "work_folder/data/dates/Covariates/plots/elastic_net/BPxHDO_top20_coefficients.png",
+        "work_folder/data/dates/Covariates/plots/elastic_net_old/BPxHDO_top20_coefficients.png",
+        "work_folder/data/dates/Covariates/elastic_net/coefficients_single_depth/BPxHDO_coefficients.parquet",
+        "work_folder/data/dates/Covariates/elastic_net/metrics_single_depth/BPxHDO_metrics.tsv",
+        "work_folder/data/dates/Covariates/elastic_net/models_single_depth/BPxHDO_model.rds",
+        "work_folder/data/dates/Covariates/plots/elastic_net/BPxHDO_cv_curves_single_depth.pdf",
+        "work_folder/data/dates/Covariates/plots/elastic_net_single_depth/BPxHDO_top20_coefficients.png",
+        "work_folder/data/dates/Covariates/plots/elastic_net_hdo_only/HDO_top20_coefficients.png",
+        "work_folder/data/dates/Covariates/plots/elastic_net_go_only/BP_top20_coefficients.png",
+
+        # --- HDO ANNOTATION DATES NEW SECTION ---
+        "work_folder/data/dates/HDO_new/downloads/DISEASE-ALLIANCE_TSV_HUMAN.tsv",
+        "work_folder/data/dates/HDO_new/downloads/hgnc_complete_set.txt",
+        "work_folder/data/dates/HDO_new/references/gene_annot_associations.parquet",
+        "work_folder/data/dates/HDO_new/references/translated_references.parquet",
+        "work_folder/data/dates/HDO_new/references/pmid_publication_dates.parquet",
+        "work_folder/data/dates/HDO_new/associated/full_annotated_network.parquet",
+        "work_folder/data/dates/HDO_new/associated/time_resolved_network.parquet",
+        "work_folder/data/dates/HDO_new/networks/network_with_found_dates.pkl",
+        "work_folder/data/dates/HDO_new/networks/final_network.pkl",
+        "work_folder/data/dates/HDO_new/top_5/nodes_with_top_5_annot_depth_5_cutoff_20.pkl",
+        get_all_HDO_master_temporal_matrices_exact_degree_match,
+        get_all_HDO_mean_adjacencies_exact_degree_match,
+        get_all_HDO_true_annotated_genes_quantiles_exact_degree_match,
+        get_all_HDO_true_vs_permutations_predictive_power_over_time_exact_degree_match,
+        get_all_HDO_true_annotated_genes_quantiles_over_time_exact_degree_match,
+        "work_folder/data/dates/HDO_new/first_annotation_dates/depth_5_cutoff_20",
+        "work_folder/data/dates/HDO_new/plots/ed_tta_mean_adjacencies/depth_5_cutoff_20/mean_adjacency_vs_time_to_annotation.png",
+        "work_folder/data/dates/HDO_new/stats/ed_tta_and_mean_adj_corr/depth_5_cutoff_20_spearman_correlation.csv",
+        "work_folder/data/dates/HDO_new/plots/ed_tta_and_mean_adj_corr/depth_5_cutoff_20_waterfall_plot.png",
+        get_all_HDO_quantiles_vs_time_to_annotation_binned_by_tertiles,
+        get_all_HDO_quantiles_vs_time_to_annotation_binned,
+
+        # --- GO PREDICTION FINAL SECTION ---
+        "work_folder/data/prediction/GO/BP/matrices/without/full_matrix.parquet",
+        get_all_GO_y_files,
+        get_all_GO_optimized_params,
+        get_all_GO_optimized_params_plots,
+        get_all_GO_xgboost_models,
+        get_all_GO_model_results_plots,
+        get_all_GO_novel_candidates,
 
         # --- PRESENTATION PLOTS SECTION ---
         expand("work_folder/data/presentation_plots/go_{aspect}_depth_5_cutoff_20_neighbor_sums.png",

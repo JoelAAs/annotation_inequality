@@ -18,30 +18,17 @@ get_param <- function(name, default) {
 }
 
 min_genes    <- snakemake@params[["min_genes"]]
-holdout_frac <- get_param("holdout_frac", 0.20)
-n_boot       <- get_param("n_boot", 30)
 use_covar    <- get_param("use_annot_covariate", TRUE)   # compute n_annot, baseline GLM, AND add it to the elastic net fits
 do_standard  <- get_param("standardize", TRUE)
 seed         <- get_param("seed", 42)
-compare_alphas_raw <- get_param("compare_alphas", numeric(0))  # extra alphas to fully refit besides best_alpha
 
 alphas_to_test <- c(0.05, seq(0.1, 0.9, by = 0.1), 1)
 n_folds <- 10
 
-# compare_alphas = "all" expands to the full alpha grid (alphas_to_test),
-# so every tested alpha gets its coefficients fully refit and exported.
-if (identical(compare_alphas_raw, "all")) {
-  compare_alphas <- alphas_to_test
-  cat(sprintf("--- [INFO] compare_alphas = 'all': will fully refit all %d alphas in the grid ---\n",
-              length(alphas_to_test)))
-} else {
-  compare_alphas <- as.numeric(compare_alphas_raw)
-}
-
-# Gaussian deviance (residual sum of squares) and deviance explained on new data
+# Gaussian deviance (residual sum of squares) and deviance explained
 gauss_dev <- function(y, mu) sum((y - mu)^2)
-dev_explained <- function(y_new, mu_new, mu_null) {
-  1 - gauss_dev(y_new, mu_new) / gauss_dev(y_new, rep(mu_null, length(y_new)))
+dev_explained <- function(y_obs, mu_pred, mu_null) {
+  1 - gauss_dev(y_obs, mu_pred) / gauss_dev(y_obs, rep(mu_null, length(y_obs)))
 }
 
 # Ontology classification from the term's name/ID.
@@ -51,7 +38,7 @@ get_ontology <- function(ids) {
          ifelse(grepl("^(DOID|HDO)", ids), "HDO", "OTHER"))
 }
 
-cat("--- [START] ELASTIC NET (GAUSSIAN ON LOG COUNT, TESTED GENES) WITH GRID SEARCH, HOLD-OUT AND STABILITY ---\n")
+cat("--- [START] ELASTIC NET (GAUSSIAN ON LOG COUNT, TESTED GENES) WITH GRID SEARCH ---\n")
 
 # ---- Load data --------------------------------------------------------------
 cat("--- [RUNNING] LOADING DATA ---\n")
@@ -100,10 +87,7 @@ rm(feature_matrix_df); invisible(gc())
 
 # n_annot: log(1 + gene's number of annotations). Used for the standalone
 # baseline GLM below (glm(y ~ n_annot, ...)) AND, in THIS script, also added
-# unpenalized to X_full - i.e. it enters the elastic net fits themselves
-# (grid search, final refit, stability selection). This is the "with n_annot"
-# variant, meant to be compared against the version that fits on the
-# annotation terms alone (n_annot used only for the baseline).
+# unpenalized to X_full - i.e. it enters the elastic net fits themselves.
 if (use_covar) {
   n_annot <- log1p(row_annot_all)
   X_full <- cbind(X_sparse, Matrix(n_annot, ncol = 1, sparse = TRUE))
@@ -161,32 +145,18 @@ pen_factor <- pen_factor[keep_cols]
 cat(sprintf("--- [INFO] TESTED GENES ONLY: %d genes, %d terms with >= %d tested genes ---\n",
             n_genes, sum(keep_cols & is_term), min_genes))
 
-# ---- Hold-out split ----------------------------------------------------------
-cat("--- [RUNNING] HOLD-OUT SPLIT ---\n")
-set.seed(seed)
-test_idx <- sample(seq_len(n_genes), size = round(holdout_frac * n_genes))
-train_idx <- setdiff(seq_len(n_genes), test_idx)
-
-X_train <- X_full[train_idx, , drop = FALSE]; y_train <- y[train_idx]
-X_test  <- X_full[test_idx,  , drop = FALSE]; y_test  <- y[test_idx]
-mu_null <- mean(y_train)
-cat(sprintf("--- [INFO] TRAIN: %d genes | TEST: %d genes ---\n",
-            length(train_idx), length(test_idx)))
-
 # Fixed foldid: same for every alpha
 set.seed(seed)
-foldid <- sample(rep(seq_len(n_folds), length.out = length(train_idx)))
+foldid <- sample(rep(seq_len(n_folds), length.out = n_genes))
 
 # ---- Baseline: n_annot only --------------------------------------------------
 baseline <- NULL
+baseline_dev_expl <- NA
 if (use_covar) {
-  base_df <- data.frame(y = y_train, n_annot = n_annot[train_idx])
+  base_df <- data.frame(y = y, n_annot = n_annot)
   baseline <- glm(y ~ n_annot, data = base_df, family = gaussian())
-  base_pred <- predict(baseline,
-                       newdata = data.frame(n_annot = n_annot[test_idx]),
-                       type = "response")
-  baseline_dev_expl <- dev_explained(y_test, base_pred, mu_null)
-  cat(sprintf("--- [INFO] BASELINE (n_annot only) TEST DEVIANCE EXPLAINED = %.4f ---\n",
+  baseline_dev_expl <- dev_explained(y, fitted(baseline), mean(y))
+  cat(sprintf("--- [INFO] BASELINE (n_annot only) DEVIANCE EXPLAINED = %.4f ---\n",
               baseline_dev_expl))
 }
 
@@ -201,12 +171,12 @@ metrics_list <- list()
 # cv_fit$cvm[1] would NOT be the true null model here.
 cv_null <- mean(sapply(seq_len(n_folds), function(k) {
   tr <- foldid != k
-  gauss_dev(y_train[!tr], rep(mean(y_train[tr]), sum(!tr))) / sum(!tr)
+  gauss_dev(y[!tr], rep(mean(y[tr]), sum(!tr))) / sum(!tr)
 }))
 
 for (alpha in alphas_to_test) {
   cat(sprintf("--- [INFO] TESTING ALPHA = %.2f ---\n", alpha))
-  cv_fit <- cv.glmnet(x = X_train, y = y_train, family = "gaussian",
+  cv_fit <- cv.glmnet(x = X_full, y = y, family = "gaussian",
                       alpha = alpha, foldid = foldid,
                       penalty.factor = pen_factor, standardize = do_standard)
 
@@ -216,12 +186,6 @@ for (alpha in alphas_to_test) {
   # Out-of-fold deviance explained, relative to the null model (cv_null)
   cv_dev_expl_min <- 1 - cv_fit$cvm[i_min] / cv_null
   cv_dev_expl_1se <- 1 - cv_fit$cvm[i_1se] / cv_null
-
-  # Hold-out performance (informative only: NOT used to choose alpha)
-  pred_test <- as.numeric(predict(cv_fit, newx = X_test, s = "lambda.min",
-                                  type = "response"))
-  test_dev_expl <- dev_explained(y_test, pred_test, mu_null)
-  test_spearman <- suppressWarnings(cor(pred_test, y_test, method = "spearman"))
 
   metrics_list[[length(metrics_list) + 1]] <- data.frame(
     alpha = alpha,
@@ -233,9 +197,7 @@ for (alpha in alphas_to_test) {
     cvsd_min = cv_fit$cvsd[i_min],
     nonzero_min = cv_fit$nzero[i_min],
     nonzero_1se = cv_fit$nzero[i_1se],
-    test_dev_explained = test_dev_expl,
-    test_spearman = test_spearman,
-    baseline_test_dev_explained = ifelse(is.null(baseline), NA, baseline_dev_expl)
+    baseline_dev_explained = baseline_dev_expl
   )
   all_models[[as.character(alpha)]] <- cv_fit
 }
@@ -243,106 +205,48 @@ for (alpha in alphas_to_test) {
 metrics_df <- do.call(rbind, metrics_list)
 best_row   <- which.max(metrics_df$cv_dev_explained_min)   # selection criterion: CV
 best_alpha <- metrics_df$alpha[best_row]
-cat(sprintf("--- [INFO] BEST ALPHA (by CV) = %.2f | CV dev. explained = %.5f | hold-out dev. explained = %.5f ---\n",
-            best_alpha, metrics_df$cv_dev_explained_min[best_row],
-            metrics_df$test_dev_explained[best_row]))
-if (metrics_df$test_dev_explained[best_row] <= 0) {
-  cat("--- [WARN] HOLD-OUT DEVIANCE EXPLAINED <= 0: THE MODEL DOES NOT GENERALIZE, INTERPRET COEFFICIENTS WITH CAUTION ---\n")
-}
+cat(sprintf("--- [INFO] BEST ALPHA (by CV) = %.2f | CV dev. explained = %.5f ---\n",
+            best_alpha, metrics_df$cv_dev_explained_min[best_row]))
 
 write.table(metrics_df, file = metrics_out, row.names = FALSE, sep = "\t", quote = FALSE)
 
-# ---- Final model + stability + coefficients, as a reusable function per alpha ----
-# Refits cv.glmnet on ALL genes for a given alpha and runs stability selection
-# via subsampling. Returns a list(final_cv, coef_df); nothing is written here -
-# the coefficients of every alpha are combined and written once to coef_out,
-# since the Snakemake rule only declares a single coefficients output.
-fit_alpha <- function(alpha_value) {
-  cat(sprintf("--- [RUNNING] REFITTING FINAL MODEL ON ALL GENES (alpha = %.2f) ---\n",
-              alpha_value))
-  set.seed(seed)
-  foldid_all <- sample(rep(seq_len(n_folds), length.out = n_genes))
-  final_cv <- cv.glmnet(x = X_full, y = y, family = "gaussian", alpha = alpha_value,
-                        foldid = foldid_all, penalty.factor = pen_factor,
-                        standardize = do_standard)
+# ---- Coefficients: best model only -------------------------------------------
+# The best-alpha model is the CV fit already computed on all genes in the grid.
+final_cv <- all_models[[as.character(best_alpha)]]
 
-  # Stability: subsampling (80% of genes), coefficient interpolated at lambda.min
-  stab_freq <- setNames(rep(NA_real_, ncol(X_full)), colnames(X_full))
-  if (n_boot > 0) {
-    cat(sprintf("--- [RUNNING] STABILITY SELECTION (%d SUBSAMPLES, alpha = %.2f) ---\n",
-                n_boot, alpha_value))
-    sel_counts <- setNames(numeric(ncol(X_full)), colnames(X_full))
-    for (b in seq_len(n_boot)) {
-      set.seed(seed + b)
-      idx <- sample(seq_len(n_genes), size = round(0.8 * n_genes))
-      # NB: do not pass a single lambda to glmnet() - without the full warm-start
-      # path, convergence for family="poisson" is unreliable and can return
-      # degenerate solutions (all coefficients zero). Let it compute the whole
-      # sequence and interpolate the value at lambda.min via s=.
-      fit_b <- glmnet(X_full[idx, , drop = FALSE], y[idx], family = "gaussian",
-                      alpha = alpha_value,
-                      penalty.factor = pen_factor, standardize = do_standard)
-      cb <- as.numeric(coef(fit_b, s = final_cv$lambda.min))[-1]
-      cat(sprintf("--- [INFO] STABILITY BOOT %d/%d (alpha = %.2f): %d / %d nonzero coefficients ---\n",
-                  b, n_boot, alpha_value, sum(cb != 0), length(cb)))
-      sel_counts <- sel_counts + (cb != 0)
-    }
-    stab_freq <- sel_counts / n_boot
-  }
+cat(sprintf("--- [RUNNING] EXTRACTING COEFFICIENTS (alpha = %.2f) ---\n", best_alpha))
+cf_min <- as.numeric(coef(final_cv, s = "lambda.min"))
+cf_1se <- as.numeric(coef(final_cv, s = "lambda.1se"))
+term_ids <- rownames(coef(final_cv, s = "lambda.min"))
 
-  # Coefficients
-  cat(sprintf("--- [RUNNING] EXTRACTING COEFFICIENTS (alpha = %.2f) ---\n", alpha_value))
-  cf_min <- as.numeric(coef(final_cv, s = "lambda.min"))
-  cf_1se <- as.numeric(coef(final_cv, s = "lambda.1se"))
-  term_ids <- rownames(coef(final_cv, s = "lambda.min"))
+coef_df <- data.frame(
+  alpha = best_alpha,
+  annotation_id = term_ids,
+  ontology = ifelse(term_ids == "n_annot", "COVARIATE", get_ontology(term_ids)),
+  n_genes_term = ifelse(term_ids %in% names(term_n_genes),
+                        unname(term_n_genes[term_ids]), NA_integer_),
+  coefficient = cf_min,
+  rate_ratio = exp(cf_min),
+  coefficient_1se = cf_1se,
+  stringsAsFactors = FALSE
+)
+coef_df <- coef_df[coef_df$annotation_id != "(Intercept)" &
+                     (coef_df$coefficient != 0 | coef_df$coefficient_1se != 0), ]
+coef_df <- coef_df[order(abs(coef_df$coefficient), decreasing = TRUE), ]
+rownames(coef_df) <- NULL
 
-  coef_df <- data.frame(
-    alpha = alpha_value,
-    annotation_id = term_ids,
-    ontology = ifelse(term_ids == "n_annot", "COVARIATE", get_ontology(term_ids)),
-    n_genes_term = ifelse(term_ids %in% names(term_n_genes),
-                          unname(term_n_genes[term_ids]), NA_integer_),
-    coefficient = cf_min,
-    rate_ratio = exp(cf_min),
-    coefficient_1se = cf_1se,
-    selection_freq = unname(stab_freq[term_ids]),
-    stringsAsFactors = FALSE
-  )
-  coef_df <- coef_df[coef_df$annotation_id != "(Intercept)" &
-                       (coef_df$coefficient != 0 | coef_df$coefficient_1se != 0), ]
-  coef_df <- coef_df[order(abs(coef_df$coefficient), decreasing = TRUE), ]
-  rownames(coef_df) <- NULL
+cat(sprintf("--- [INFO] NON-ZERO TERMS BY ONTOLOGY (lambda.min, alpha = %.2f) ---\n", best_alpha))
+print(table(coef_df$ontology[coef_df$coefficient != 0]))
 
-  cat(sprintf("--- [INFO] NON-ZERO TERMS BY ONTOLOGY (lambda.min, alpha = %.2f) ---\n", alpha_value))
-  print(table(coef_df$ontology[coef_df$coefficient != 0]))
-
-  list(final_cv = final_cv, coef_df = coef_df)
-}
-
-# best_alpha is always included; compare_alphas adds more rows (tagged by the
-# "alpha" column) to the SAME coefficients file, since the Snakemake rule
-# declares a single en_coefficients output.
-fit_best <- fit_alpha(best_alpha)
-final_cv <- fit_best$final_cv          # kept for saveRDS() below
-all_coef_list <- list(fit_best$coef_df)
-
-extra_alphas <- setdiff(compare_alphas, best_alpha)
-for (a in extra_alphas) {
-  all_coef_list[[length(all_coef_list) + 1]] <- fit_alpha(a)$coef_df
-}
-
-coef_df <- do.call(rbind, all_coef_list)
 write_parquet(coef_df, coef_out)
 
 # ---- Model saving -------------------------------------------------------------
 cat("--- [RUNNING] SAVING MODELS (.RDS) ---\n")
 saveRDS(list(
-  final_cv = final_cv,             # refit on all genes (reported coefficients)
+  final_cv = final_cv,             # best-alpha model (reported coefficients)
   best_alpha = best_alpha,
-  cv_train_models = all_models,    # grid models (train only)
+  cv_models = all_models,          # grid models
   baseline = baseline,
-  train_idx = train_idx,
-  test_idx = test_idx,
   penalty_factor = pen_factor,
   seed = seed
 ), file = model_out)
@@ -352,16 +256,15 @@ cat("--- [RUNNING] SAVING CV CURVES (.PDF) ---\n")
 pdf(cv_curves_out, width = 8, height = 6)
 
 plot(metrics_df$alpha, metrics_df$cv_dev_explained_min, type = "b", pch = 16,
-     ylim = range(c(metrics_df$cv_dev_explained_min, metrics_df$test_dev_explained,
-                    baseline_dev_expl <- if (is.null(baseline)) NULL else metrics_df$baseline_test_dev_explained[1],
-                    0), na.rm = TRUE),
+     ylim = range(c(metrics_df$cv_dev_explained_min, baseline_dev_expl, 0), na.rm = TRUE),
      xlab = "alpha", ylab = "Deviance explained",
-     main = "CV (train) vs hold-out deviance explained")
-lines(metrics_df$alpha, metrics_df$test_dev_explained, type = "b", pch = 17, col = "firebrick")
-if (!is.null(baseline)) abline(h = metrics_df$baseline_test_dev_explained[1], lty = 2, col = "grey40")
+     main = "CV deviance explained")
+if (!is.null(baseline)) abline(h = baseline_dev_expl, lty = 2, col = "grey40")
 abline(h = 0, lty = 3)
-legend("bottomright", legend = c("CV (train)", "Hold-out", "Baseline n_annot"),
-       pch = c(16, 17, NA), lty = c(1, 1, 2), col = c("black", "firebrick", "grey40"), bty = "n")
+if (!is.null(baseline)) {
+  legend("bottomright", legend = c("CV", "Baseline n_annot"),
+         pch = c(16, NA), lty = c(1, 2), col = c("black", "grey40"), bty = "n")
+}
 
 for (alpha_val in names(all_models)) {
   plot(all_models[[alpha_val]])
